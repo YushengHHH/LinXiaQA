@@ -18,6 +18,7 @@ test("article PDF is generated from a dedicated A4 editorial sheet", () => {
   assert.match(exporter, /html2pdf\(\)\.set/);
   assert.match(css, /\.pdf-document\{width:210mm;height:296mm/);
   assert.doesNotMatch(exporter, /cloneNode|articleRef/);
+  assert.doesNotMatch(exporter, /avoid-all/);
 });
 
 test("article tools stay available without interrupting the reading flow", () => {

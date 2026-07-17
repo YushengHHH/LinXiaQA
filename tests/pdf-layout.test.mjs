@@ -29,7 +29,7 @@ test("article tools stay available without interrupting the reading flow", () =>
 });
 
 test("the single-page PDF uses comfortable editorial typography", () => {
-  assert.match(css, /\.pdf-body p\{[^}]*font-size:9\.2pt;line-height:1\.56/);
+  assert.match(css, /\.pdf-body p\{[^}]*font-size:11\.2pt;line-height:1\.72/);
   assert.match(css, /\.pdf-document h1\{font-size:23pt/);
-  assert.match(css, /\.pdf-document blockquote p\{[^}]*font-size:10\.5pt/);
+  assert.match(css, /\.pdf-document blockquote p\{[^}]*font-size:11\.8pt/);
 });

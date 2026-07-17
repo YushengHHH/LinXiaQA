@@ -16,7 +16,7 @@ test("article PDF is generated from a dedicated A4 editorial sheet", () => {
   const exporter = page.slice(page.indexOf("async function saveArticlePdf"), page.indexOf("async function savePdf"));
   assert.match(exporter, /pdf-document/);
   assert.match(exporter, /html2pdf\(\)\.set/);
-  assert.match(css, /\.pdf-document\{width:210mm;height:296mm/);
+  assert.match(css, /\.pdf-document\{[^}]*width:210mm;height:296mm/);
   assert.doesNotMatch(exporter, /cloneNode|articleRef/);
   assert.doesNotMatch(exporter, /avoid-all/);
 });
@@ -30,7 +30,11 @@ test("article tools stay available without interrupting the reading flow", () =>
 });
 
 test("the single-page PDF uses comfortable editorial typography", () => {
-  assert.match(css, /\.pdf-body p\{[^}]*font-size:11\.2pt;line-height:1\.72/);
+  const exporter = page.slice(page.indexOf("async function saveArticlePdf"), page.indexOf("async function savePdf"));
+  assert.match(css, /--pdf-body-size:10\.4pt;--pdf-body-leading:1\.62;--pdf-para-gap:3mm/);
+  assert.match(css, /\.pdf-body p\{[^}]*font-size:var\(--pdf-body-size\);line-height:var\(--pdf-body-leading\)/);
   assert.match(css, /\.pdf-document h1\{font-size:23pt/);
-  assert.match(css, /\.pdf-document blockquote p\{[^}]*font-size:11\.8pt/);
+  assert.match(css, /\.pdf-document blockquote p\{[^}]*font-size:11\.2pt/);
+  assert.match(exporter, /pdfSizes=\[10\.4,10\.1,9\.8,9\.5,9\.2\]/);
+  assert.match(exporter, /last\.getBoundingClientRect\(\)\.bottom<=sign\.getBoundingClientRect\(\)\.top-12/);
 });

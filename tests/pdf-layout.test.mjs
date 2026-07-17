@@ -20,9 +20,16 @@ test("article PDF is generated from a dedicated A4 editorial sheet", () => {
   assert.doesNotMatch(exporter, /cloneNode|articleRef/);
 });
 
-test("sharing stays available before and during reading", () => {
-  assert.match(page, /article-primary-actions/);
-  assert.match(page, /resonance-share/);
-  assert.match(page, /joy-dock/);
+test("article tools stay available without interrupting the reading flow", () => {
+  const article = page.slice(page.indexOf('{p==="article"&&'), page.indexOf('{p==="issue"&&'));
+  assert.match(article, /article-utility/);
+  assert.match(article, /joy-dock/);
+  assert.doesNotMatch(article, /article-primary-actions|resonance-share|article-tools/);
   assert.match(css, /\.joy-dock\{position:fixed/);
+});
+
+test("the single-page PDF uses comfortable editorial typography", () => {
+  assert.match(css, /\.pdf-body p\{[^}]*font-size:9\.2pt;line-height:1\.56/);
+  assert.match(css, /\.pdf-document h1\{font-size:23pt/);
+  assert.match(css, /\.pdf-document blockquote p\{[^}]*font-size:10\.5pt/);
 });

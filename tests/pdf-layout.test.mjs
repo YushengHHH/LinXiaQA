@@ -38,3 +38,13 @@ test("the single-page PDF uses comfortable editorial typography", () => {
   assert.match(exporter, /pdfSizes=\[10\.4,10\.1,9\.8,9\.5,9\.2\]/);
   assert.match(exporter, /last\.getBoundingClientRect\(\)\.bottom<=sign\.getBoundingClientRect\(\)\.top-12/);
 });
+
+test("article PDF capture target remains drawable for html2canvas", () => {
+  const exporter = page.slice(page.indexOf("async function saveArticlePdf"), page.indexOf("async function savePdf"));
+  assert.match(css, /\.pdf-stage\{[^}]*left:0/);
+  assert.match(css, /\.pdf-stage\{[^}]*z-index:2147483647/);
+  assert.match(css, /\.pdf-stage\{[^}]*pointer-events:none/);
+  assert.match(css, /\.pdf-document\{[^}]*position:relative/);
+  assert.doesNotMatch(css, /\.pdf-stage\{[^}]*(left:-100000px|z-index:-1)/);
+  assert.match(exporter, /requestAnimationFrame\(\(\)=>requestAnimationFrame/);
+});

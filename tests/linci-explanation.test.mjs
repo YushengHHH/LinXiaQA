@@ -17,3 +17,13 @@ test('Easy Forest text is explained through accessible interpretation layers', (
   assert.match(css, /\.linci-guide/);
   assert.match(css, /\.linc-cards/);
 });
+
+test('Linci explanation is anchored to the exact matched text and diagnosis', () => {
+  assert.match(page, /本句中/);
+  assert.match(page, /按句段读完整走势/);
+  assert.match(page, /原文可读成/);
+  assert.match(page, /三重锚点锁定/);
+  assert.match(page, /诊断锚点/);
+  assert.match(page, /文本信号/);
+  assert.doesNotMatch(page, /道路对应组织中的方向通道/);
+});

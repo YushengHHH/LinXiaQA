@@ -17,8 +17,10 @@ test("every inner view receives a persistent journey navigator", () => {
 test("knowledge immersion offers explicit exits", () => {
   assert.match(page, /← 返回议题原文/);
   assert.match(page, /返回原文继续阅读/);
-  assert.match(page, /带着知识点追问/);
+  assert.match(page, /先消化这层解释/);
   assert.match(page, /aria-label="关闭知识浸润"/);
+  assert.match(page, /className="linci-detail"/);
+  assert.doesNotMatch(page, /带着知识点追问/);
 });
 
 test("seven reading layers can be traversed in both directions", () => {

@@ -13,6 +13,9 @@ test('topic detection gives visible feedback and remains usable', () => {
   assert.ok(page.includes('\u6b21\u8981\u4fe1\u53f7'));
   assert.ok(!page.includes('\u6682\u672a\u8bc6\u522b\u51fa\u660e\u786e\u8bdd\u9898'));
   assert.match(page, /boost=\(i:number\)/);
+  assert.ok(page.includes('\u4e00\u56e2\u548c\u6c14'));
+  assert.ok(page.includes('\u4e00\u56e2\u6563\u6c99'));
+  assert.ok(page.includes('\u529e\u516c\u5ba4'));
   assert.match(page, /gap<2/);
   assert.match(page, /disabled=\{naturalPending\}/);
   assert.match(page, /className="detect-btn"/);

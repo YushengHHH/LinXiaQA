@@ -32,6 +32,10 @@ export type ZhiDaoState = {
   inertiaTitle: string;
   warning: string;
   targetIds: [number, number, number];
+  patterns: string[];
+  misread: string;
+  avoid: string;
+  firstAction: string;
 };
 
 export type StrategyPath = {
@@ -88,14 +92,14 @@ export const diagnosisQuestions: DiagnosisQuestion[] = [
 ];
 
 export const zhiDaoStates: ZhiDaoState[] = [
-  { id: 0, name: "乾", code: "000", tau: 0, g: 1, delta: 0, title: "方向明确，执行受阻", symptom: "战略清晰，但团队并未真正跟进。", explanation: "建设优先、邻位链路、顺向传导同时出现，说明中心意志强，但承接机制偏弱。", inertiaId: 2, inertiaTitle: "依附增强，核心命脉变弱", warning: "继续靠中心推动，会用更大的声量换来更深的等待。", targetIds: [7, 4, 5] },
-  { id: 1, name: "兑", code: "001", tau: 0, g: 1, delta: 1, title: "创新上行受阻", symptom: "一线有想法，却无法进入共同决策。", explanation: "建设意愿仍在，基层信号也活跃，但组织接口没有把新判断接入决策。", inertiaId: 6, inertiaTitle: "表达增加，真实改变减少", warning: "意见看似充分，关键资源仍不会流向新尝试。", targetIds: [5, 7, 3] },
-  { id: 2, name: "离", code: "010", tau: 0, g: 4, delta: 0, title: "资源充沛，方向模糊", symptom: "有人、有资源，却不知道该往哪里集中。", explanation: "建设优先但构型转入隔位，说明机会很多，取舍标准尚未收束。", inertiaId: 7, inertiaTitle: "项目漂移，资源持续分散", warning: "继续追加机会，会让组织失去共同的取舍标准。", targetIds: [0, 5, 4] },
-  { id: 3, name: "震", code: "011", tau: 0, g: 4, delta: 1, title: "基层活力与战略脱节", symptom: "成员有劲，却不知道如何接入整体方向。", explanation: "生发、隔位、上行同时出现，说明局部动能真实存在，但缺少组织级转译。", inertiaId: 4, inertiaTitle: "局部追热点，整体失节奏", warning: "活力若没有接口，会迅速变成各自为战。", targetIds: [1, 5, 7] },
-  { id: 4, name: "巽", code: "100", tau: 1, g: 2, delta: 0, title: "外部压力下的内部混乱", symptom: "市场变化很快，组织解释彼此冲突。", explanation: "清理优先、隔位牵制、顺向下达叠加，说明外部压力被内部结构放大。", inertiaId: 6, inertiaTitle: "共识涣散，反应越来越碎", warning: "若每个部门独自解释环境，变化只会放大内耗。", targetIds: [2, 0, 5] },
-  { id: 5, name: "坎", code: "101", tau: 1, g: 2, delta: 1, title: "底层动荡向上传导", symptom: "基层持续不稳，高层得到的仍是过滤后的信息。", explanation: "阻滞已经显化，真实信号从下方上涌，系统需要先恢复可听见性。", inertiaId: 6, inertiaTitle: "风险堆积，行动处处受阻", warning: "真实信号越晚上行，调整成本就越高。", targetIds: [1, 3, 7] },
-  { id: 6, name: "艮", code: "110", tau: 1, g: 3, delta: 0, title: "规则僵化，创新窒息", symptom: "流程完善，却没有人愿意率先突破。", explanation: "清理逻辑占据上风，顺向规则压住试错空间，系统稳定但变钝。", inertiaId: 7, inertiaTitle: "能力脱落，只剩形式完整", warning: "继续加规则，会把最后的判断空间也一并收走。", targetIds: [4, 1, 0] },
-  { id: 7, name: "坤", code: "111", tau: 1, g: 3, delta: 1, title: "隐性消耗，表面平静", symptom: "一切看似正常，组织却迟迟没有生长。", explanation: "清理、隔位、上行都处在隐性状态，组织表面柔顺，真实责任正在下沉。", inertiaId: 6, inertiaTitle: "上下不交，系统进入停滞", warning: "不说破的体谅，正在变成无人负责的默认。", targetIds: [5, 1, 0] }
+  { id: 0, name: "乾", code: "000", tau: 0, g: 1, delta: 0, title: "方向明确，执行受阻", symptom: "战略清晰，但团队并未真正跟进。", explanation: "建设优先、邻位链路、顺向传导同时出现，说明中心意志强，但承接机制偏弱。", inertiaId: 2, inertiaTitle: "依附增强，核心命脉变弱", warning: "继续靠中心推动，会用更大的声量换来更深的等待。", targetIds: [7, 4, 5], patterns: ["目标反复宣讲，实际动作仍停在原处", "会议里都认可，交付时各自等待", "核心人物越忙，外围越不敢判断"], misread: "容易被误判为执行力差，其实常是承接接口和反馈节奏没有被设计。", avoid: "不要继续加口号、加压力、加检查频次。", firstAction: "选一个最小交付接口，明确谁接、何时回、用什么证据证明已接住。" },
+  { id: 1, name: "兑", code: "001", tau: 0, g: 1, delta: 1, title: "创新上行受阻", symptom: "一线有想法，却无法进入共同决策。", explanation: "建设意愿仍在，基层信号也活跃，但组织接口没有把新判断接入决策。", inertiaId: 6, inertiaTitle: "表达增加，真实改变减少", warning: "意见看似充分，关键资源仍不会流向新尝试。", targetIds: [5, 7, 3], patterns: ["一线不断提出改法，却总停在讨论层", "试点很多，授权和资源跟不上", "大家愿意说，但不知道谁能拍板"], misread: "容易被误判为想法太散，其实关键是上行信号没有进入资源配置。", avoid: "不要再开一轮泛泛征集意见。", firstAction: "把一个一线建议变成可决策提案：边界、资源、风险、7天证据一次写清。" },
+  { id: 2, name: "离", code: "010", tau: 0, g: 4, delta: 0, title: "资源充沛，方向模糊", symptom: "有人、有资源，却不知道该往哪里集中。", explanation: "建设优先但构型转入隔位，说明机会很多，取舍标准尚未收束。", inertiaId: 7, inertiaTitle: "项目漂移，资源持续分散", warning: "继续追加机会，会让组织失去共同的取舍标准。", targetIds: [0, 5, 4], patterns: ["项目同时推进，但彼此不形成合力", "资源看似够用，关键结果却没有聚焦", "每个机会都有道理，取舍越来越困难"], misread: "容易被误判为资源不足，其实更像缺少共同排序标准。", avoid: "不要用新增项目来证明组织还在前进。", firstAction: "列出三个正在争夺资源的事项，只保留一个两周内可验证的主目标。" },
+  { id: 3, name: "震", code: "011", tau: 0, g: 4, delta: 1, title: "基层活力与战略脱节", symptom: "成员有劲，却不知道如何接入整体方向。", explanation: "生发、隔位、上行同时出现，说明局部动能真实存在，但缺少组织级转译。", inertiaId: 4, inertiaTitle: "局部追热点，整体失节奏", warning: "活力若没有接口，会迅速变成各自为战。", targetIds: [1, 5, 7], patterns: ["局部团队很活跃，整体节奏却越来越乱", "好点子不断冒出，但难以形成组织动作", "基层在自救，高层看到的是噪声"], misread: "容易被误判为基层不服从，其实是局部动能没有被翻译成共同路径。", avoid: "不要急着把所有自发动作收编成统一指令。", firstAction: "选一个最有生命力的局部动作，帮它补上目标接口和复盘节奏。" },
+  { id: 4, name: "巽", code: "100", tau: 1, g: 2, delta: 0, title: "外部压力下的内部混乱", symptom: "市场变化很快，组织解释彼此冲突。", explanation: "清理优先、隔位牵制、顺向下达叠加，说明外部压力被内部结构放大。", inertiaId: 6, inertiaTitle: "共识涣散，反应越来越碎", warning: "若每个部门独自解释环境，变化只会放大内耗。", targetIds: [2, 0, 5], patterns: ["外部一变，内部就出现多套解释", "部门各自应急，彼此认为对方拖后腿", "领导越要求快，组织越碎片化"], misread: "容易被误判为环境太难，其实是内部解释权和响应边界不清。", avoid: "不要让每个部门独立制定一套应急方案。", firstAction: "先统一一个外部变化的解释口径，再确定唯一的跨部门响应责任人。" },
+  { id: 5, name: "坎", code: "101", tau: 1, g: 2, delta: 1, title: "底层动荡向上传导", symptom: "基层持续不稳，高层得到的仍是过滤后的信息。", explanation: "阻滞已经显化，真实信号从下方上涌，系统需要先恢复可听见性。", inertiaId: 6, inertiaTitle: "风险堆积，行动处处受阻", warning: "真实信号越晚上行，调整成本就越高。", targetIds: [1, 3, 7], patterns: ["一线反复报问题，但越往上越被润色", "小风险不断累积，却迟迟不能成为议题", "真正知道现场的人不在决策桌旁"], misread: "容易被误判为基层情绪化，其实是风险传导链条失真。", avoid: "不要先追责谁没有执行好。", firstAction: "开一条不处罚的事实通道，只收集三个最具体的现场阻滞证据。" },
+  { id: 6, name: "艮", code: "110", tau: 1, g: 3, delta: 0, title: "规则僵化，创新窒息", symptom: "流程完善，却没有人愿意率先突破。", explanation: "清理逻辑占据上风，顺向规则压住试错空间，系统稳定但变钝。", inertiaId: 7, inertiaTitle: "能力脱落，只剩形式完整", warning: "继续加规则，会把最后的判断空间也一并收走。", targetIds: [4, 1, 0], patterns: ["流程越来越完整，判断越来越保守", "每个人都能说明为什么不能做", "试错被要求先证明绝对安全"], misread: "容易被误判为大家缺乏创新意识，其实是规则吞掉了试错空间。", avoid: "不要再为例外情况新增审批层。", firstAction: "划出一个低风险例外区，允许一次小试错，并提前约定停止条件。" },
+  { id: 7, name: "坤", code: "111", tau: 1, g: 3, delta: 1, title: "隐性消耗，表面平静", symptom: "一切看似正常，组织却迟迟没有生长。", explanation: "清理、隔位、上行都处在隐性状态，组织表面柔顺，真实责任正在下沉。", inertiaId: 6, inertiaTitle: "上下不交，系统进入停滞", warning: "不说破的体谅，正在变成无人负责的默认。", targetIds: [5, 1, 0], patterns: ["没有明显冲突，但事情总是慢慢变轻", "大家都很配合，却没有真正承担", "问题被体谅、被绕开、被延期"], misread: "容易被误判为氛围稳定，其实是责任和判断正在隐性流失。", avoid: "不要继续用和气掩盖没有人负责。", firstAction: "点名一个被长期体谅的问题，定义一个不伤人的责任归口。" }
 ];
 
 export function resolveDiagnosis(answers: DiagnosisAnswer[]) {

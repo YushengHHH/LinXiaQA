@@ -5,12 +5,43 @@ import {buildStrategyPaths,diagnosisQuestions,getState,resolveDiagnosis,type Ans
 type Screen="home"|"diagnose"|"map"|"system"|"history";
 type RecordItem={date:string;hex:string,target:string,mode:string,progress:number};
 const modes=[{name:"自动驾驶",desc:"系统在每个节点自动重新寻优"},{name:"半自动",desc:"目标变化时先请你确认"},{name:"手动锁定",desc:"终点不变，只重算路径"},{name:"静默陪伴",desc:"不主动打扰，打开时再更新"}];
+const lenses=[
+ {id:"execution",name:"执行推进",keys:["执行","推进","推不动","落地","交付","目标","进度"],hint:"这像是目标与行动之间的断点。"},
+ {id:"resource",name:"资源能力",keys:["资源","人手","能力","预算","时间","支持","忙"],hint:"这像是供给、负荷与优先级之间的错位。"},
+ {id:"relation",name:"协作关系",keys:["部门","协作","沟通","扯皮","配合","对齐","责任"],hint:"这像是关系接口和责任边界出现了摩擦。"},
+ {id:"decision",name:"判断决策",keys:["决策","拍板","高层","反馈","一线","基层","信息"],hint:"这像是判断权与真实信息之间的传导问题。"},
+ {id:"rule",name:"规则流程",keys:["流程","规则","审批","制度","合规","创新","试错"],hint:"这像是稳定机制压住了变化空间。"}
+];
 
 function BrandMark({className=""}:{className?:string}){return <svg className={`brand-mark ${className}`} viewBox="0 0 120 120" aria-hidden="true"><g fill="none" strokeLinecap="butt"><path className="mark-deep mark-wide" d="M28 0 L54 26 M66 38 L82 54 M94 66 L120 92"/><path className="mark-soft mark-thin" d="M0 28 L26 54 M38 66 L54 82 M66 94 L92 120"/><path className="mark-deep mark-wide" d="M0 92 L26 66 M38 54 L54 38 M66 26 L92 0"/><path className="mark-soft mark-thin" d="M28 120 L54 94 M66 82 L82 66 M94 54 L120 28"/></g><circle className="mark-dot" cx="60" cy="60" r="2.8"/></svg>}
 function Trigram({code}:{code:string}){return <span className="trigram" aria-label={`卦象编码 ${code}`}>{code.split("").map((v,i)=><i className={v==="1"?"yang":"yin"} key={i}/>)}</span>}
 const guaNames=["坤","剥","比","观","豫","晋","萃","否","谦","艮","蹇","渐","小过","旅","咸","遁","师","蒙","坎","涣","解","未济","困","讼","升","蛊","井","巽","恒","鼎","大过","姤","复","颐","屯","益","震","噬嗑","随","无妄","明夷","贲","既济","家人","丰","离","革","同人","临","损","节","中孚","归妹","睽","兑","履","泰","大畜","需","小畜","大壮","大有","夬","乾"];
 function makeChangeScene(){const fromCode=Math.floor(Math.random()*64),moving=Math.floor(Math.random()*6),toCode=fromCode^(1<<moving),toLines=Array.from({length:6},(_,i)=>(toCode>>i)&1);return{from:guaNames[fromCode],to:guaNames[toCode],moving,toLines}}
 function DynamicChange(){const[scene,setScene]=useState({from:"乾",to:"履",moving:2,toLines:[1,1,0,1,1,1]});useEffect(()=>{setScene(makeChangeScene());const timer=setInterval(()=>setScene(makeChangeScene()),4200);return()=>clearInterval(timer)},[]);return <div className="change-stage" aria-label="动态变卦演示"><div className="change-meta"><span>动态变卦 · 随机一爻</span><b>{scene.from}之{scene.to}</b><small>一次变卦，多种可能</small></div><div className="six-lines">{scene.toLines.map((v,i)=><i className={`${v?"yang":"yin"} ${i===scene.moving?"moving":""}`} key={`${scene.from}-${scene.to}-${i}`}><span/><span/></i>)}</div><em className="change-word change">变易</em><em className="change-word constant">不易</em><em className="change-word simple">简易</em><div className="change-caption"><span>本卦 · {scene.from}</span><i>第 {scene.moving+1} 爻变</i><span>之卦 · {scene.to}</span></div></div>}
+function getComplaintLens(topic:string){return lenses.find(l=>l.keys.some(k=>topic.includes(k)))||{id:"general",name:"组织困惑",hint:"先把这件事放进组织关系里看。"}}
+function tailorQuestions(topic:string){
+ const lens=getComplaintLens(topic),short=topic.length>22?topic.slice(0,22)+"…":topic;
+ return diagnosisQuestions.map(q=>{
+  if(q.key==="tau")return {...q,title:`处理“${short}”，此刻更该先补建设，还是先清阻滞？`,note:`${lens.hint} 第一问先判断能量次序：是补目标、资源、共识，还是先清掉旧承诺、冲突和卡点。`,options:[
+   {...q.options[0],text:`先围绕“${short}”重建共同目标，让相关人重新看见方向`},
+   {...q.options[1],text:`先给“${short}”补资源、能力或时间，否则推进只是口号`},
+   {...q.options[2],text:`先清掉“${short}”背后的旧承诺和模糊责任，不然越推越乱`},
+   {...q.options[3],text:`先处理“${short}”牵出的内耗和冲突，否则新动作会变形`}
+  ]};
+  if(q.key==="phase")return {...q,title:`“${short}”主要卡在交接处，还是卡在跨层跨部门之间？`,note:`第二问看关系构型：同一链路内接不上，是邻位问题；跨层、跨部门互相牵制，是隔位问题。`,options:[
+   {...q.options[0],text:`“${short}”常卡在上下游交接处，谁接下一棒不清楚`},
+   {...q.options[1],text:`“${short}”从目标到执行层层变形，理解不一致`},
+   {...q.options[2],text:`“${short}”牵涉多个部门或层级，资源和判断难以对齐`},
+   {...q.options[3],text:`大家表面支持“${short}”，但关键处会绕开或悬置`}
+  ]};
+  return {...q,title:`围绕“${short}”，真实判断现在从哪里来？`,note:`第三问看传导方向：是上方下达仍占主导，还是一线信号已经在反向改变局面。`,options:[
+   {...q.options[0],text:`主要等上方给“${short}”定方向，团队再执行`},
+   {...q.options[1],text:`“${short}”方向看似明确，但真实反馈总是来得太晚`},
+   {...q.options[2],text:`一线关于“${short}”的信号很多，但很难进入真正决策`},
+   {...q.options[3],text:`基层已在围绕“${short}”自发调整，高层还没完全感知`}
+  ]};
+ });
+}
 
 export default function Home(){
  const[screen,setScreen]=useState<Screen>("home"),[step,setStep]=useState(-1),[complaint,setComplaint]=useState(""),[answers,setAnswers]=useState<(AnswerValue|undefined)[]>([]),[path,setPath]=useState(0),[mode,setMode]=useState(1),[records,setRecords]=useState<RecordItem[]>([]),[saved,setSaved]=useState(false);
@@ -20,7 +51,9 @@ export default function Home(){
  const targetPaths=useMemo(()=>buildStrategyPaths(hex),[hex]);
  const chosen=targetPaths[path]||targetPaths[0];
  const topic=complaint.trim()||"这件说不清的组织困惑";
- const evidence=diagnosisQuestions.map((question,index)=>{
+ const lens=getComplaintLens(topic);
+ const activeQuestions=useMemo(()=>tailorQuestions(topic),[topic]);
+ const evidence=activeQuestions.map((question,index)=>{
   const selected=answers[index];
   const option=question.options.find(item=>{
    if(!selected)return false;
@@ -43,7 +76,7 @@ export default function Home(){
   <section className="triple"><div className="section-title"><p className="eyebrow">三卦路径沙盘</p><h2>不是一条静态路线，<br/>而是持续修正的航向。</h2></div>{[["现状之卦","极简自拍","把三次选择编码成当下处境"],["惯性之卦","默认趋势","推演非干预状态下的自然滑向"],["目标之卦","期望终点","比较代价，选择当前更好的归宿"]].map((v,i)=><article key={v[0]}><span>0{i+1}</span><h3>{v[0]}</h3><b>{v[1]}</b><p>{v[2]}</p><i/></article>)}</section>
   <section className="engine"><aside><p className="eyebrow">四层策略引擎</p><h2>古典意象在表，<br/>离散结构在里。</h2><p>从五行的关系空间，到八卦的瞬时处境、六十四卦的情境议题，再到易林的演化建议。用户不必理解数学，也能获得可解释的判断。</p><button className="light" onClick={()=>nav("system")}>查看完整映射 →</button></aside><div>{[["0","五行","管理的基本关系"],["1","八卦","八种基础处境"],["2","六十四卦","六十四种情境议题"],["3","易林","变化中的操作线索"]].map(v=><article key={v[0]}><small>LEVEL {v[0]}</small><b>{v[1]}</b><p>{v[2]}</p></article>)}</div></section></>}
 
-  {screen==="diagnose"&&<section className="diagnose"><aside><p className="eyebrow">{step<0?"第零问 · 主诉":"三变即三问"}</p><h1>先把困惑放下，<br/>再一起问路。</h1><p>{step<0?"不必完整描述背景。只要写下此刻最卡住、最反复、最说不清的一件事。":"三问会围绕你的主诉展开，并把选择写入 S₈ 状态表，生成可解释的现状之卦。"}</p><div className="progress"><span style={{width:`${step<0?12:(step+1)/3*100}%`}}/></div><small>{step<0?"0 / 3":`${step+1} / 3`}</small></aside>{step<0?<div className="question complaint"><p className="eyebrow">主诉 · 围绕真实问题诊断</p><h2>此刻最困扰你的组织问题是什么？</h2><textarea value={complaint} onChange={e=>setComplaint(e.target.value)} placeholder="例如：目标很清楚，但团队总是推不动；几个部门都很忙，却没人愿意真正负责；我感觉组织哪里不对，但说不清。" autoFocus/><div className="complaint-tips"><span>一句话即可</span><span>可以很模糊</span><span>后面三问会帮你定位</span></div><button className="primary" onClick={submitComplaint}>围绕此事开始三问 <span>↗</span></button></div>:<div className="question"><p className="eyebrow">{diagnosisQuestions[step].label}</p><h2>围绕“{topic}”，<br/>{diagnosisQuestions[step].title}</h2><p>{diagnosisQuestions[step].note}</p><small className="axis">{diagnosisQuestions[step].axis}</small><div className="options">{diagnosisQuestions[step].options.map((x,i)=><button onClick={()=>answer(x.value)} key={x.text}><span>{String.fromCharCode(65+i)}</span><b>{x.text}</b><small>{x.evidence}</small><i>写入状态 →</i></button>)}</div>{step>0&&<button className="back" onClick={()=>setStep(step-1)}>← 返回上一问</button>}{step===0&&<button className="back" onClick={()=>setStep(-1)}>← 修改主诉</button>}</div>}</section>}
+  {screen==="diagnose"&&<section className="diagnose"><aside><p className="eyebrow">{step<0?"第零问 · 主诉":"三变即三问"}</p><h1>先把困惑放下，<br/>再一起问路。</h1><p>{step<0?"不必完整描述背景。只要写下此刻最卡住、最反复、最说不清的一件事。":`系统已识别为「${lens.name}」语境，三问会围绕你的主诉展开，并写入 S₈ 状态表。`}</p><div className="progress"><span style={{width:`${step<0?12:(step+1)/3*100}%`}}/></div><small>{step<0?"0 / 3":`${step+1} / 3`}</small></aside>{step<0?<div className="question complaint"><p className="eyebrow">主诉 · 围绕真实问题诊断</p><h2>此刻最困扰你的组织问题是什么？</h2><textarea value={complaint} onChange={e=>setComplaint(e.target.value)} placeholder="例如：目标很清楚，但团队总是推不动；几个部门都很忙，却没人愿意真正负责；我感觉组织哪里不对，但说不清。" autoFocus/><div className="complaint-tips"><span>一句话即可</span><span>可以很模糊</span><span>后面三问会帮你定位</span></div><button className="primary" onClick={submitComplaint}>围绕此事开始三问 <span>↗</span></button></div>:<div className="question"><p className="eyebrow">{activeQuestions[step].label} · {lens.name}</p><h2>{activeQuestions[step].title}</h2><p>{activeQuestions[step].note}</p><small className="axis">{activeQuestions[step].axis}</small><div className="options">{activeQuestions[step].options.map((x,i)=><button onClick={()=>answer(x.value)} key={x.text}><span>{String.fromCharCode(65+i)}</span><b>{x.text}</b><small>{x.evidence}</small><i>写入状态 →</i></button>)}</div>{step>0&&<button className="back" onClick={()=>setStep(step-1)}>← 返回上一问</button>}{step===0&&<button className="back" onClick={()=>setStep(-1)}>← 修改主诉</button>}</div>}</section>}
 
   {screen==="map"&&<section className="map-page"><div className="report-head"><p className="eyebrow">主诉诊断报告 · V0.2</p><span>STATE / S₈-{hex.id} / {hex.code}</span><h1>围绕这件事，先判断你在哪里。</h1><blockquote>{topic}</blockquote></div><div className="report-grid"><article className="report-main"><small>现状判断</small><div><Trigram code={hex.code}/><b>{hex.name}</b></div><h2>{hex.title}</h2><p>{hex.symptom}</p><p>{hex.explanation}</p></article><article className="report-proof"><small>判断依据</small><h2>三问写入 S₈ 状态表</h2><ul>{evidence.map(({question,option},i)=><li key={question.key}><span>0{i+1}</span><div><b>{question.axis}</b><p>{option?.text||"尚未回答"}</p><small>{option?.evidence||"系统按默认状态推导。"}</small></div></li>)}</ul></article><article className="report-inertia"><small>如果不干预</small><div><Trigram code={inertia.code}/><b>{inertia.name}</b></div><h2>{hex.inertiaTitle}</h2><p>{hex.warning}</p></article><article className="report-recommend"><small>默认推荐路径</small><h2>{chosen.name} · {chosen.cost}</h2><p>{chosen.desc}</p><em>{chosen.rationale}</em></article></div><div className="insight-panel"><article><small>常见组织症状</small><h2>这类处境通常长这样</h2><ul>{hex.patterns.map(item=><li key={item}>{item}</li>)}</ul></article><article><small>容易误判</small><h2>不要把表象当病因</h2><p>{hex.misread}</p></article><article className="avoid"><small>此刻勿做</small><h2>{hex.avoid}</h2><p>先停止会放大惯性的动作，再谈新增动作。</p></article><article className="first-action"><small>第一行动</small><h2>{hex.firstAction}</h2><p>第一步必须小、清楚、可观察；它不是最终方案，而是下一次判断的证据。</p></article></div><div className="map-head compact"><p className="eyebrow">三卦路径沙盘 · 本次诊断</p><h1>{hex.title}</h1><p>报告先给出可执行判断；沙盘用于比较“现在、惯性、目标”三者之间的关系。</p></div><div className="three-hex"><article className="current"><small>现状之卦 · S₈</small><div><Trigram code={hex.code}/><b>{hex.name}</b></div><h2>{hex.title}</h2><p>{hex.explanation}</p></article><i>不干预 →</i><article className="inertia"><small>惯性之卦 · 默认趋势</small><div><Trigram code={inertia.code}/><b>{inertia.name}</b></div><h2>{hex.inertiaTitle}</h2><p>{hex.warning}</p></article><i>主动选择 →</i><article className="target"><small>目标之卦 · 期望终点</small><div><Trigram code={chosen.targetCode}/><b>{chosen.target}</b></div><h2>{chosen.name}</h2><p>{chosen.desc}</p></article></div>
   <div className="path-pick"><div><p className="eyebrow">三条推荐路径 · P₄₀₉₆ 雏形</p><h2>你愿意承担哪一种改变？</h2></div><section>{targetPaths.map((p,i)=><button className={i===path?"selected":""} onClick={()=>setPath(i)} key={p.tag}><span>{p.tag}</span><div><b>{p.name}</b><small>{p.cost}</small><p>{p.desc}</p><em>{p.rationale}</em></div><i>{i===path?"已选择":"比较此路"}</i></button>)}</section></div>

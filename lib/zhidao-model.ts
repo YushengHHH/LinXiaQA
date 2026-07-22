@@ -46,6 +46,7 @@ export type StrategyPath = {
   cost: string;
   desc: string;
   rationale: string;
+  metrics: { cost: number; resistance: number; speed: number; risk: number };
   moves: string[];
 };
 
@@ -119,6 +120,11 @@ export function buildStrategyPaths(state: ZhiDaoState): StrategyPath[] {
   const names = ["顺势微调", "重构跃迁", "理想靶心"] as const;
   const costs = ["低代价", "中代价", "高代价"] as const;
   const verbs = ["先动一个接口", "重画一段结构", "切换目标构型"] as const;
+  const metrics = [
+    { cost: 1, resistance: 2, speed: 5, risk: 2 },
+    { cost: 3, resistance: 4, speed: 3, risk: 3 },
+    { cost: 5, resistance: 5, speed: 2, risk: 4 }
+  ] as const;
   return state.targetIds.map((targetId, index) => {
     const target = getState(targetId);
     return {
@@ -129,6 +135,7 @@ export function buildStrategyPaths(state: ZhiDaoState): StrategyPath[] {
       cost: costs[index],
       desc: `从“${state.title}”转向“${target.title}”，${verbs[index]}。`,
       rationale: `匹配 ${state.name} → ${target.name} 的可达路径，先降低${index === 0 ? "执行摩擦" : index === 1 ? "结构牵制" : "目标漂移"}。`,
+      metrics: metrics[index],
       moves: [
         index === 0 ? "选一个最小可验证接口" : index === 1 ? "停止一项失效承诺" : "确认不可让渡的目标内核",
         index === 0 ? "建立一次双向反馈" : index === 1 ? "重画责任与资源边界" : "重配关键判断权",

@@ -56,10 +56,10 @@ export type StrategyPath = {
 export const diagnosisQuestions: DiagnosisQuestion[] = [
   {
     key: "tau",
-    label: "第一变 · 时序",
-    title: "此刻更像先建设，还是先清理？",
-    note: "辨认组织能量的先后次序：先把生发机制立起来，还是先处理阻滞与冲突。",
-    axis: "二相行为 A：建设 / 清理",
+    label: "第一问 · 先做什么",
+    title: "这件事现在更该先补动力，还是先清障碍？",
+    note: "判断管理动作的优先级：先补目标、资源和共识，还是先处理旧承诺、责任不清和内耗。",
+    axis: "管理取向：补动力 / 清障碍",
     options: [
       { text: "先搭共识与目标，让大家重新看见方向", value: { tau: 0 }, evidence: "优先生发，说明系统还保有可被组织起来的动能。" },
       { text: "先补资源与能力，否则目标只是口号", value: { tau: 0 }, evidence: "优先建设，说明主要矛盾在供给不足。" },
@@ -69,10 +69,10 @@ export const diagnosisQuestions: DiagnosisQuestion[] = [
   },
   {
     key: "phase",
-    label: "第二变 · 构型",
-    title: "组织现在更卡在邻位，还是隔位？",
-    note: "辨认关系构型：问题是在相邻环节接不上，还是跨层、跨部门之间互相牵制。",
-    axis: "二相行为 B：邻位 / 隔位",
+    label: "第二问 · 卡在哪里",
+    title: "主要卡在流程交接，还是卡在跨部门/跨层级协同？",
+    note: "判断问题发生的位置：是上下游交接、目标到执行接不上，还是多个部门、多个层级彼此牵制。",
+    axis: "问题位置：流程交接 / 跨界协同",
     options: [
       { text: "上下游衔接断裂，事情常卡在交接处", value: { phase: 0 }, evidence: "邻位生发受阻，适合从接口和节奏入手。" },
       { text: "目标到执行之间掉链子，层层理解不一致", value: { phase: 0 }, evidence: "邻位传递失真，说明构型仍在连续链路内。" },
@@ -82,10 +82,10 @@ export const diagnosisQuestions: DiagnosisQuestion[] = [
   },
   {
     key: "delta",
-    label: "第三变 · 方向",
-    title: "真实判断主要从上往下，还是从下往上？",
-    note: "辨认传导方向：决策是单向下达，还是基层信号能够反向改变判断。",
-    axis: "二相行为 C：下达 / 上行",
+    label: "第三问 · 信息从哪来",
+    title: "真实判断现在主要靠上级拍板，还是靠一线反馈修正？",
+    note: "判断信息流向：是上级定方向、团队等待执行，还是一线事实正在反过来改变判断。",
+    axis: "判断来源：上级拍板 / 一线反馈",
     options: [
       { text: "主要由高层判断，团队等待明确指令", value: { delta: 0 }, evidence: "顺向传导占主导，组织需要检查执行承接。" },
       { text: "方向很清楚，但反馈常常来得太晚", value: { delta: 0 }, evidence: "顺向路径较强，逆向校正不足。" },

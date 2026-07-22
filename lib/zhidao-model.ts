@@ -47,6 +47,9 @@ export type StrategyPath = {
   desc: string;
   rationale: string;
   metrics: { cost: number; resistance: number; speed: number; risk: number };
+  recommendation: string;
+  notFirst: string;
+  prerequisite: string;
   moves: string[];
 };
 
@@ -120,6 +123,21 @@ export function buildStrategyPaths(state: ZhiDaoState): StrategyPath[] {
   const names = ["顺势微调", "重构跃迁", "理想靶心"] as const;
   const costs = ["低代价", "中代价", "高代价"] as const;
   const verbs = ["先动一个接口", "重画一段结构", "切换目标构型"] as const;
+  const recommendations = [
+    "默认先推荐这条：它不要求组织立刻大改结构，能用最小动作验证局面是否真的可动。",
+    "当问题已经不是接口摩擦，而是责任、资源和判断边界互相缠住时，再优先考虑这条。",
+    "只有当现有目标本身已经失效，且关键人愿意承受重配代价时，才适合直接选择这条。"
+  ] as const;
+  const notFirst = [
+    "它可能太温和；如果阻滞已经结构化，单点微调只能暴露问题，不能完成重构。",
+    "它暂不作为默认起点，因为阻力和协调成本较高，若证据不足，容易变成新一轮拉扯。",
+    "它暂不优先，因为代价、阻力和风险都高；若没有共同承诺，容易把目标切换成口号。"
+  ] as const;
+  const prerequisites = [
+    "只需确定一个可观察接口，并约定两周内看一次证据。",
+    "需要至少一个关键责任人愿意重画边界，并暂停一项低效旧承诺。",
+    "需要先确认不可让渡的目标内核，以及谁拥有重新分配判断权的授权。"
+  ] as const;
   const metrics = [
     { cost: 1, resistance: 2, speed: 5, risk: 2 },
     { cost: 3, resistance: 4, speed: 3, risk: 3 },
@@ -136,6 +154,9 @@ export function buildStrategyPaths(state: ZhiDaoState): StrategyPath[] {
       desc: `从“${state.title}”转向“${target.title}”，${verbs[index]}。`,
       rationale: `匹配 ${state.name} → ${target.name} 的可达路径，先降低${index === 0 ? "执行摩擦" : index === 1 ? "结构牵制" : "目标漂移"}。`,
       metrics: metrics[index],
+      recommendation: recommendations[index],
+      notFirst: notFirst[index],
+      prerequisite: prerequisites[index],
       moves: [
         index === 0 ? "选一个最小可验证接口" : index === 1 ? "停止一项失效承诺" : "确认不可让渡的目标内核",
         index === 0 ? "建立一次双向反馈" : index === 1 ? "重画责任与资源边界" : "重配关键判断权",

@@ -1,30 +1,9 @@
 "use client";
 import {useEffect,useMemo,useState} from "react";
+import {buildStrategyPaths,diagnosisQuestions,getState,resolveDiagnosis,type AnswerValue} from "../lib/zhidao-model";
 
 type Screen="home"|"diagnose"|"map"|"system"|"history";
 type RecordItem={date:string;hex:string,target:string,mode:string,progress:number};
-type Hex={name:string;code:string,title:string,symptom:string,inertia:string,inertiaTitle:string,warning:string};
-
-const questions=[
- {key:"τ",label:"第一变 · 次序",title:"眼前最像哪一种局面？",note:"辨认组织是更需要先建设，还是先清理。",options:["大家挺忙，但说不清在忙什么","各做各的，出了事才发现没人负责","目标很清楚，但就是推不动","内部没问题，但外部变化太快"]},
- {key:"g",label:"第二变 · 构型",title:"真正卡住你的，是什么？",note:"辨认能量是在建设中受阻，还是在整顿中失焦。",options:["推不动——说了很多遍还是落不了地","说不清——方向对但讲不清为什么","扛不住——事情太多，无人分担","看不懂——团队在回避重要问题"]},
- {key:"δ",label:"第三变 · 方向",title:"真实的声音，如何流动？",note:"辨认判断是单向传导，还是能够逆向返回。",options:["你讲大家听，偶尔有人点头","几个人争，其他人沉默","大家轮流讲，但没有结论","偶尔会有很好的碰撞和共识"]}
-];
-const hexes:Hex[]=[
- {name:"乾",code:"110",title:"方向明确，执行受阻",symptom:"战略清晰，但团队并未真正跟进。",inertia:"比",inertiaTitle:"依附增强，核心命脉变弱",warning:"继续靠中心推动，会用更大的声量换来更深的等待。"},
- {name:"兑",code:"111",title:"创新上行受阻",symptom:"一线有想法，却无法进入共同决策。",inertia:"困",inertiaTitle:"表达增加，真实改变减少",warning:"意见看似充分，关键资源仍不会流向新尝试。"},
- {name:"离",code:"100",title:"资源充沛，方向模糊",symptom:"有人、有资源，却不知道该往哪里集中。",inertia:"旅",inertiaTitle:"项目漂移，资源持续分散",warning:"继续追加机会，会让组织失去共同的取舍标准。"},
- {name:"震",code:"101",title:"基层活力与战略脱节",symptom:"成员有劲，却不知道如何接入整体方向。",inertia:"随",inertiaTitle:"局部追热点，整体失节奏",warning:"活力若没有接口，会迅速变成各自为战。"},
- {name:"巽",code:"010",title:"外部压力下的内部混乱",symptom:"市场变化很快，组织解释彼此冲突。",inertia:"涣",inertiaTitle:"共识涣散，反应越来越碎",warning:"若每个部门独自解释环境，变化只会放大内耗。"},
- {name:"坎",code:"011",title:"底层动荡向上传导",symptom:"基层持续不稳，高层得到的仍是过滤后的信息。",inertia:"蹇",inertiaTitle:"风险堆积，行动处处受阻",warning:"真实信号越晚上行，调整成本就越高。"},
- {name:"艮",code:"000",title:"规则僵化，创新窒息",symptom:"流程完善，却没有人愿意率先突破。",inertia:"剥",inertiaTitle:"能力脱落，只剩形式完整",warning:"继续加规则，会把最后的判断空间也一并收走。"},
- {name:"坤",code:"001",title:"隐性消耗，表面平静",symptom:"一切看似正常，组织却迟迟没有生长。",inertia:"否",inertiaTitle:"上下不交，系统进入停滞",warning:"不说破的体谅，正在变成无人负责的默认。"}
-];
-const targetPaths=[
- {tag:"A",name:"顺势微调",target:"履",cost:"低代价",desc:"不改方向，先把单向执行改成双向共识。",moves:["开放风险上行接口","建立一次中途反馈","用两周证据再决定"]},
- {tag:"B",name:"重构跃迁",target:"同人",cost:"中代价",desc:"先清理旧承诺，再建立真正的共同承担。",moves:["停止一项旧承诺","重画责任边界","围绕同一结果协作"]},
- {tag:"C",name:"理想靶心",target:"大有",cost:"高代价",desc:"切换组织构型，让资源与判断围绕新核心重组。",moves:["确定不可让渡的内核","重配关键资源","建立新的演化节奏"]}
-];
 const modes=[{name:"自动驾驶",desc:"系统在每个节点自动重新寻优"},{name:"半自动",desc:"目标变化时先请你确认"},{name:"手动锁定",desc:"终点不变，只重算路径"},{name:"静默陪伴",desc:"不主动打扰，打开时再更新"}];
 
 function BrandMark({className=""}:{className?:string}){return <svg className={`brand-mark ${className}`} viewBox="0 0 120 120" aria-hidden="true"><g fill="none" strokeLinecap="butt"><path className="mark-deep mark-wide" d="M28 0 L54 26 M66 38 L82 54 M94 66 L120 92"/><path className="mark-soft mark-thin" d="M0 28 L26 54 M38 66 L54 82 M66 94 L92 120"/><path className="mark-deep mark-wide" d="M0 92 L26 66 M38 54 L54 38 M66 26 L92 0"/><path className="mark-soft mark-thin" d="M28 120 L54 94 M66 82 L82 66 M94 54 L120 28"/></g><circle className="mark-dot" cx="60" cy="60" r="2.8"/></svg>}
@@ -34,13 +13,15 @@ function makeChangeScene(){const fromCode=Math.floor(Math.random()*64),moving=Ma
 function DynamicChange(){const[scene,setScene]=useState({from:"乾",to:"履",moving:2,toLines:[1,1,0,1,1,1]});useEffect(()=>{setScene(makeChangeScene());const timer=setInterval(()=>setScene(makeChangeScene()),4200);return()=>clearInterval(timer)},[]);return <div className="change-stage" aria-label="动态变卦演示"><div className="change-meta"><span>动态变卦 · 随机一爻</span><b>{scene.from}之{scene.to}</b><small>一次变卦，多种可能</small></div><div className="six-lines">{scene.toLines.map((v,i)=><i className={`${v?"yang":"yin"} ${i===scene.moving?"moving":""}`} key={`${scene.from}-${scene.to}-${i}`}><span/><span/></i>)}</div><em className="change-word change">变易</em><em className="change-word constant">不易</em><em className="change-word simple">简易</em><div className="change-caption"><span>本卦 · {scene.from}</span><i>第 {scene.moving+1} 爻变</i><span>之卦 · {scene.to}</span></div></div>}
 
 export default function Home(){
- const[screen,setScreen]=useState<Screen>("home"),[step,setStep]=useState(0),[answers,setAnswers]=useState<number[]>([]),[path,setPath]=useState(0),[mode,setMode]=useState(1),[records,setRecords]=useState<RecordItem[]>([]),[saved,setSaved]=useState(false);
+ const[screen,setScreen]=useState<Screen>("home"),[step,setStep]=useState(0),[answers,setAnswers]=useState<(AnswerValue|undefined)[]>([]),[path,setPath]=useState(0),[mode,setMode]=useState(1),[records,setRecords]=useState<RecordItem[]>([]),[saved,setSaved]=useState(false);
  useEffect(()=>{try{setRecords(JSON.parse(localStorage.getItem("linxia-fskn-records")||"[]"))}catch{}},[]);
- const hex=useMemo(()=>hexes[(answers.reduce((a,b,i)=>a+(b%2)*(1<<i),0)+answers.reduce((a,b)=>a+b,0))%8],[answers]);
- const chosen=targetPaths[path];
+ const hex=useMemo(()=>resolveDiagnosis(answers),[answers]);
+ const inertia=getState(hex.inertiaId);
+ const targetPaths=useMemo(()=>buildStrategyPaths(hex),[hex]);
+ const chosen=targetPaths[path]||targetPaths[0];
  const nav=(s:Screen)=>{setScreen(s);scrollTo(0,0)};
- function start(){setStep(0);setAnswers([]);setSaved(false);nav("diagnose")}
- function answer(i:number){let next=[...answers];next[step]=i;setAnswers(next);if(step<2)setStep(step+1);else nav("map")}
+ function start(){setStep(0);setAnswers([]);setPath(0);setSaved(false);nav("diagnose")}
+ function answer(value:AnswerValue){let next=[...answers];next[step]=value;setAnswers(next);if(step<2)setStep(step+1);else nav("map")}
  function save(){if(saved)return;let next=[{date:new Date().toLocaleDateString("zh-CN"),hex:hex.name+" · "+hex.title,target:chosen.target+" · "+chosen.name,mode:modes[mode].name,progress:33},...records].slice(0,12);setRecords(next);setSaved(true);localStorage.setItem("linxia-fskn-records",JSON.stringify(next))}
  return <main>
   <header className="top"><button className="brand" onClick={()=>nav("home")}><BrandMark className="brand-symbol"/><span><b>知道 · 管理</b><small>林下问路｜网罟天下，以佃以渔</small></span></button><nav><button onClick={start}>处境诊断</button><button onClick={()=>nav("system")}>方法体系</button><button onClick={()=>nav("history")}>演化记录 <i>{records.length}</i></button></nav></header>
@@ -50,10 +31,10 @@ export default function Home(){
   <section className="triple"><div className="section-title"><p className="eyebrow">三卦路径沙盘</p><h2>不是一条静态路线，<br/>而是持续修正的航向。</h2></div>{[["现状之卦","极简自拍","把三次选择编码成当下处境"],["惯性之卦","默认趋势","推演非干预状态下的自然滑向"],["目标之卦","期望终点","比较代价，选择当前更好的归宿"]].map((v,i)=><article key={v[0]}><span>0{i+1}</span><h3>{v[0]}</h3><b>{v[1]}</b><p>{v[2]}</p><i/></article>)}</section>
   <section className="engine"><aside><p className="eyebrow">四层策略引擎</p><h2>古典意象在表，<br/>离散结构在里。</h2><p>从五行的关系空间，到八卦的瞬时处境、六十四卦的情境议题，再到易林的演化建议。用户不必理解数学，也能获得可解释的判断。</p><button className="light" onClick={()=>nav("system")}>查看完整映射 →</button></aside><div>{[["0","五行","管理的基本关系"],["1","八卦","八种基础处境"],["2","六十四卦","六十四种情境议题"],["3","易林","变化中的操作线索"]].map(v=><article key={v[0]}><small>LEVEL {v[0]}</small><b>{v[1]}</b><p>{v[2]}</p></article>)}</div></section></>}
 
-  {screen==="diagnose"&&<section className="diagnose"><aside><p className="eyebrow">三变即三问</p><h1>不问你是谁，<br/>只问此刻发生了什么。</h1><p>三问分别辨认次序、构型与方向。答案没有好坏，只决定系统从哪一种处境开始推演。</p><div className="progress"><span style={{width:`${(step+1)/3*100}%`}}/></div><small>{step+1} / 3</small></aside><div className="question"><p className="eyebrow">{questions[step].label}</p><h2>{questions[step].title}</h2><p>{questions[step].note}</p><div className="options">{questions[step].options.map((x,i)=><button onClick={()=>answer(i)} key={x}><span>{String.fromCharCode(65+i)}</span><b>{x}</b><i>选择 →</i></button>)}</div>{step>0&&<button className="back" onClick={()=>setStep(step-1)}>← 返回上一问</button>}</div></section>}
+  {screen==="diagnose"&&<section className="diagnose"><aside><p className="eyebrow">三变即三问</p><h1>不问你是谁，<br/>只问此刻发生了什么。</h1><p>三问分别辨认三种正交的二相管理行为。每一次选择都会写入 S₈ 状态表，生成可解释的现状之卦。</p><div className="progress"><span style={{width:`${(step+1)/3*100}%`}}/></div><small>{step+1} / 3</small></aside><div className="question"><p className="eyebrow">{diagnosisQuestions[step].label}</p><h2>{diagnosisQuestions[step].title}</h2><p>{diagnosisQuestions[step].note}</p><small className="axis">{diagnosisQuestions[step].axis}</small><div className="options">{diagnosisQuestions[step].options.map((x,i)=><button onClick={()=>answer(x.value)} key={x.text}><span>{String.fromCharCode(65+i)}</span><b>{x.text}</b><small>{x.evidence}</small><i>写入状态 →</i></button>)}</div>{step>0&&<button className="back" onClick={()=>setStep(step-1)}>← 返回上一问</button>}</div></section>}
 
-  {screen==="map"&&<section className="map-page"><div className="map-head"><p className="eyebrow">三卦路径沙盘 · 本次诊断</p><span>STATE / {hex.code}</span><h1>{hex.title}</h1><p>{hex.symptom}</p></div><div className="three-hex"><article className="current"><small>本卦 · 现状</small><div><Trigram code={hex.code}/><b>{hex.name}</b></div><h2>{hex.title}</h2><p>这是你现在的位置，不是对组织的定性。</p></article><i>不干预 →</i><article className="inertia"><small>惯性之卦 · 默认趋势</small><div><Trigram code={hex.code.split("").reverse().join("")}/><b>{hex.inertia}</b></div><h2>{hex.inertiaTitle}</h2><p>{hex.warning}</p></article><i>主动选择 →</i><article className="target"><small>目标之卦 · 期望终点</small><div><Trigram code={["110","111","101"][path]}/><b>{chosen.target}</b></div><h2>{chosen.name}</h2><p>{chosen.desc}</p></article></div>
-  <div className="path-pick"><div><p className="eyebrow">三条推荐路径</p><h2>你愿意承担哪一种改变？</h2></div><section>{targetPaths.map((p,i)=><button className={i===path?"selected":""} onClick={()=>setPath(i)} key={p.tag}><span>{p.tag}</span><div><b>{p.name}</b><small>{p.cost}</small><p>{p.desc}</p></div><i>{i===path?"已选择":"比较此路"}</i></button>)}</section></div>
+  {screen==="map"&&<section className="map-page"><div className="map-head"><p className="eyebrow">三卦路径沙盘 · 本次诊断</p><span>STATE / S₈-{hex.id} / {hex.code}</span><h1>{hex.title}</h1><p>{hex.symptom}</p></div><div className="three-hex"><article className="current"><small>现状之卦 · S₈</small><div><Trigram code={hex.code}/><b>{hex.name}</b></div><h2>{hex.title}</h2><p>{hex.explanation}</p></article><i>不干预 →</i><article className="inertia"><small>惯性之卦 · 默认趋势</small><div><Trigram code={inertia.code}/><b>{inertia.name}</b></div><h2>{hex.inertiaTitle}</h2><p>{hex.warning}</p></article><i>主动选择 →</i><article className="target"><small>目标之卦 · 期望终点</small><div><Trigram code={chosen.targetCode}/><b>{chosen.target}</b></div><h2>{chosen.name}</h2><p>{chosen.desc}</p></article></div>
+  <div className="path-pick"><div><p className="eyebrow">三条推荐路径 · P₄₀₉₆ 雏形</p><h2>你愿意承担哪一种改变？</h2></div><section>{targetPaths.map((p,i)=><button className={i===path?"selected":""} onClick={()=>setPath(i)} key={p.tag}><span>{p.tag}</span><div><b>{p.name}</b><small>{p.cost}</small><p>{p.desc}</p><em>{p.rationale}</em></div><i>{i===path?"已选择":"比较此路"}</i></button>)}</section></div>
   <div className="roadbook"><aside><p className="eyebrow">从 {hex.name} 到 {chosen.target}</p><h2>第一段路书</h2><p>不是一次性方案，而是抵达下一个可观测节点的行动序列。</p></aside><ol>{chosen.moves.map((x,i)=><li key={x}><span>0{i+1}</span><b>{x}</b><small>{["立即","7天","14天"][i]}</small></li>)}</ol><div className="gate"><small>收敛闸门</small><span><i/>目标锁定</span><span><i/>路径 ≤ 2 步</span><span><i/>风险信号转弱</span></div></div>
   <div className="mode"><div><p className="eyebrow">控制权在你</p><h2>下一次变化发生时，系统怎样陪你？</h2></div><div>{modes.map((m,i)=><button className={mode===i?"on":""} onClick={()=>setMode(i)} key={m.name}><b>{m.name}</b><small>{m.desc}</small></button>)}</div><button className="primary" onClick={save}>{saved?"本次路径已存档 ✓":"确认路径，进入第一次迭代"}</button></div></section>}
 

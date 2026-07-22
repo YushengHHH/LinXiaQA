@@ -1,6 +1,6 @@
-export type Binary = 0 | 1;
+﻿export type Binary = 0 | 1;
 export type Generator = 1 | 2 | 3 | 4;
-export type AnswerValue = { tau?: Binary; phase?: Binary; delta?: Binary };
+export type AnswerValue = { tau?: Binary; phase?: Binary; delta?: Binary; weight?: number; bias?: 0 | 1 | 2 };
 export type DiagnosisAnswer = AnswerValue | undefined;
 
 export type QuestionOption = {
@@ -61,10 +61,10 @@ export const diagnosisQuestions: DiagnosisQuestion[] = [
     note: "判断管理动作的优先级：先补目标、资源和共识，还是先处理旧承诺、责任不清和内耗。",
     axis: "管理取向：补动力 / 清障碍",
     options: [
-      { text: "先搭共识与目标，让大家重新看见方向", value: { tau: 0 }, evidence: "优先生发，说明系统还保有可被组织起来的动能。" },
-      { text: "先补资源与能力，否则目标只是口号", value: { tau: 0 }, evidence: "优先建设，说明主要矛盾在供给不足。" },
-      { text: "先清掉旧承诺和模糊责任，不然越推越乱", value: { tau: 1 }, evidence: "优先清理，说明系统阻滞已经压过新增动能。" },
-      { text: "先处理内耗和冲突，否则任何新动作都会变形", value: { tau: 1 }, evidence: "优先破阻，说明克制关系需要先被显化。" }
+      { text: "先搭共识与目标，让大家重新看见方向", value: { tau: 0, weight: 1, bias: 0 }, evidence: "优先生发，说明系统还保有可被组织起来的动能。" },
+      { text: "先补资源与能力，否则目标只是口号", value: { tau: 0, weight: 2, bias: 1 }, evidence: "优先建设，说明主要矛盾在供给不足。" },
+      { text: "先清掉旧承诺和模糊责任，不然越推越乱", value: { tau: 1, weight: 2, bias: 1 }, evidence: "优先清理，说明系统阻滞已经压过新增动能。" },
+      { text: "先处理内耗和冲突，否则任何新动作都会变形", value: { tau: 1, weight: 3, bias: 2 }, evidence: "优先破阻，说明克制关系需要先被显化。" }
     ]
   },
   {
@@ -74,10 +74,10 @@ export const diagnosisQuestions: DiagnosisQuestion[] = [
     note: "判断问题发生的位置：是上下游交接、目标到执行接不上，还是多个部门、多个层级彼此牵制。",
     axis: "问题位置：流程交接 / 跨界协同",
     options: [
-      { text: "上下游衔接断裂，事情常卡在交接处", value: { phase: 0 }, evidence: "邻位生发受阻，适合从接口和节奏入手。" },
-      { text: "目标到执行之间掉链子，层层理解不一致", value: { phase: 0 }, evidence: "邻位传递失真，说明构型仍在连续链路内。" },
-      { text: "跨部门互相牵制，资源和判断无法对齐", value: { phase: 1 }, evidence: "隔位克制增强，说明系统已出现结构性拉扯。" },
-      { text: "表面都同意，真正关键处却彼此绕开", value: { phase: 1 }, evidence: "隔位关系隐性化，说明需要处理被遮蔽的制约。" }
+      { text: "上下游衔接断裂，事情常卡在交接处", value: { phase: 0, weight: 1, bias: 0 }, evidence: "邻位生发受阻，适合从接口和节奏入手。" },
+      { text: "目标到执行之间掉链子，层层理解不一致", value: { phase: 0, weight: 2, bias: 0 }, evidence: "邻位传递失真，说明构型仍在连续链路内。" },
+      { text: "跨部门互相牵制，资源和判断无法对齐", value: { phase: 1, weight: 2, bias: 1 }, evidence: "隔位克制增强，说明系统已出现结构性拉扯。" },
+      { text: "表面都同意，真正关键处却彼此绕开", value: { phase: 1, weight: 3, bias: 2 }, evidence: "隔位关系隐性化，说明需要处理被遮蔽的制约。" }
     ]
   },
   {
@@ -87,10 +87,10 @@ export const diagnosisQuestions: DiagnosisQuestion[] = [
     note: "判断信息流向：是上级定方向、团队等待执行，还是一线事实正在反过来改变判断。",
     axis: "判断来源：上级拍板 / 一线反馈",
     options: [
-      { text: "主要由高层判断，团队等待明确指令", value: { delta: 0 }, evidence: "顺向传导占主导，组织需要检查执行承接。" },
-      { text: "方向很清楚，但反馈常常来得太晚", value: { delta: 0 }, evidence: "顺向路径较强，逆向校正不足。" },
-      { text: "一线信号很多，但很难进入真正决策", value: { delta: 1 }, evidence: "逆向信号存在，系统需要建立上行接口。" },
-      { text: "基层已经在自发调整，高层还没完全感知", value: { delta: 1 }, evidence: "逆向变化正在发生，目标可能需要重新校准。" }
+      { text: "主要由高层判断，团队等待明确指令", value: { delta: 0, weight: 1, bias: 0 }, evidence: "顺向传导占主导，组织需要检查执行承接。" },
+      { text: "方向很清楚，但反馈常常来得太晚", value: { delta: 0, weight: 2, bias: 1 }, evidence: "顺向路径较强，逆向校正不足。" },
+      { text: "一线信号很多，但很难进入真正决策", value: { delta: 1, weight: 2, bias: 0 }, evidence: "逆向信号存在，系统需要建立上行接口。" },
+      { text: "基层已经在自发调整，高层还没完全感知", value: { delta: 1, weight: 3, bias: 2 }, evidence: "逆向变化正在发生，目标可能需要重新校准。" }
     ]
   }
 ];

@@ -32,6 +32,17 @@ export type HexagramState = {
   managementReading: string;
 };
 
+export type DerivedHexagram = {
+  type: "psychological" | "structural";
+  title: string;
+  question: string;
+  from: HexagramState;
+  to: HexagramState;
+  changedLines: LinePosition[];
+  rationale: string;
+  reading: string;
+};
+
 export type QuestionOption = {
   text: string;
   value: AnswerValue;
@@ -338,6 +349,59 @@ export function resolveHexagramDiagnosis(answers: DiagnosisAnswer[]) {
   const lower = trigramStates.find(state => state.lines.join("") === lowerLines) || trigramStates[0];
   const upper = trigramStates.find(state => state.lines.join("") === upperLines) || trigramStates[0];
   return getHexagramState(upper.name, lower.name);
+}
+
+function hexagramFromLines(lines: LineKind[]) {
+  const lowerKey = lines.slice(0, 3).join("");
+  const upperKey = lines.slice(3, 6).join("");
+  const lower = trigramStates.find(state => state.lines.join("") === lowerKey) || trigramStates[0];
+  const upper = trigramStates.find(state => state.lines.join("") === upperKey) || trigramStates[0];
+  return getHexagramState(upper.name, lower.name);
+}
+
+function flipLine(value: LineKind): LineKind {
+  return value === "yang" ? "yin" : "yang";
+}
+
+export function derivePsychologicalHexagram(current: HexagramState, answers: DiagnosisAnswer[]): DerivedHexagram {
+  const pressureLines = answers
+    .filter(answer => answer?.line && answer.weight && answer.weight >= 3)
+    .map(answer => answer!.line!)
+    .slice(0, 2);
+  const changedLines = pressureLines.length ? pressureLines : [answers.find(answer => answer?.lineValue === "yin")?.line || 1];
+  const lines = [...current.lines];
+  changedLines.forEach(line => { lines[line - 1] = flipLine(lines[line - 1]); });
+  const to = hexagramFromLines(lines);
+  return {
+    type: "psychological",
+    title: "心理卦",
+    question: "我想 / 我怕怎样？",
+    from: current,
+    to,
+    changedLines,
+    rationale: `把高压或最敏感的第 ${changedLines.join("、")} 爻视为心理变爻，观察管理者直觉中最想扭转、也最害怕失控的位置。`,
+    reading: `心理卦从「${current.name}」转向「${to.name}」，表达的是主观感受里的趋避方向：哪里压力最大，哪里就最容易被放大成“必须立刻改变”的念头。`
+  };
+}
+
+export function deriveStructuralHexagram(current: HexagramState, answers: DiagnosisAnswer[]): DerivedHexagram {
+  const upperPressure = answers
+    .filter(answer => answer?.line && answer.line >= 4 && (answer.lineValue === "yin" || (answer.weight || 0) >= 2))
+    .map(answer => answer!.line!);
+  const changedLines = upperPressure.length ? upperPressure.slice(0, 2) : [4];
+  const lines = [...current.lines];
+  changedLines.forEach(line => { lines[line - 1] = "yin"; });
+  const to = hexagramFromLines(lines);
+  return {
+    type: "structural",
+    title: "事理卦",
+    question: "不干预事情会怎样走？",
+    from: current,
+    to,
+    changedLines,
+    rationale: `优先观察四、五、上爻的接口、决策与外部压力；第 ${changedLines.join("、")} 爻显示结构惯性会先压向上层参照与管理接口。`,
+    reading: `事理卦从「${current.name}」推向「${to.name}」，表达的是若不主动干预，组织结构更可能沿着压力较大的接口、决策或外部环境继续滑行。`
+  };
 }
 
 export function getState(id: number) {

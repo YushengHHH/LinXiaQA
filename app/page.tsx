@@ -54,41 +54,41 @@ function buildComplaintProfile(topic:string,focusId?:string){
 function tailorQuestions(topic:string){
  const lens=getComplaintLens(topic),short=topic.length>22?topic.slice(0,22)+"…":topic;
  return sixDiagnosisQuestions.map((q,index)=>{
-  if(index===0)return {...q,title:`处理“${short}”，此刻更该先补动力，还是先清障碍？`,note:`${lens.hint} 第一问先判断管理动作的优先级：补目标、补资源、补共识，还是先清掉旧承诺、责任不清和内耗。`,options:[
-   {...q.options[0],text:`先围绕“${short}”重建共同目标，让相关人重新看见方向`},
-   {...q.options[1],text:`先给“${short}”补资源、能力或时间，否则推进只是口号`},
-   {...q.options[2],text:`先清掉“${short}”背后的旧承诺和模糊责任，不然越推越乱`},
-   {...q.options[3],text:`先处理“${short}”牵出的内耗和冲突，否则新动作会变形`}
+  if(index===0)return {...q,title:`“${short}”到了执行现场，最像哪一种情况？`,note:`${lens.hint} 第一问不问理论，只看目标有没有变成清楚的任务、节奏和交付责任。`,options:[
+   {...q.options[0],text:`大家知道“${short}”要做什么，也知道先交付哪一步`},
+   {...q.options[1],text:`方向大致明白，但“${short}”的任务拆分和交付节奏还不够清楚`},
+   {...q.options[2],text:`会议上都同意“${short}”，真正推进时就开始等待、拖延或反复解释`},
+   {...q.options[3],text:`“${short}”在现场已经明显推不动，继续压任务只会带来应付和内耗`}
   ]};
-  if(index===1)return {...q,title:`“${short}”背后的资源承压，现在更接近哪一种？`,note:`第二问看资源与承压：这件事是还能通过优先级调整承接，还是已经开始消耗关键人。`,options:[
-   {...q.options[0],text:`“${short}”资源基本能承接，只需要把节奏排清楚`},
-   {...q.options[1],text:`“${short}”资源有一点紧，但还能靠优先级调整撑住`},
-   {...q.options[2],text:`“${short}”所需的人手、时间或能力明显不足`},
-   {...q.options[3],text:`大家都在为“${short}”硬扛，继续推进会消耗关键人`}
+  if(index===1)return {...q,title:`为了推进“${short}”，资源和承压现在到什么程度？`,note:`第二问看资源：不是问资源多不多，而是看人、时间、能力和预算能不能承接这个目标。`,options:[
+   {...q.options[0],text:`人手、时间和能力基本够，只要排清优先级就能动`},
+   {...q.options[1],text:`资源有点紧，但停掉一两件低优先级的事还能撑住`},
+   {...q.options[2],text:`关键人、时间或能力明显缺口，推进时总有人被挤爆`},
+   {...q.options[3],text:`现在主要靠硬扛和加班在撑，继续做会伤到关键人或基本盘`}
   ]};
-  if(index===2)return {...q,title:`真正做“${short}”的人，现在还有多少主动性？`,note:`第三问看基层活力：一线是在主动承接、求助报警，还是已经开始躲避和沉默。`,options:[
-   {...q.options[0],text:`一线愿意围绕“${short}”行动，只需要清楚入口`},
-   {...q.options[1],text:`一线想动，但不知道怎样才算对“${short}”有效`},
-   {...q.options[2],text:`一线关于“${short}”反馈不少，更像是在求助或报警`},
-   {...q.options[3],text:`一线已经开始躲避、沉默，或围绕“${short}”各自找活路`}
+  if(index===2)return {...q,title:`真正做“${short}”的人，现在是什么状态？`,note:`第三问看一线：他们是在主动试着解决，还是只是在反馈困难、等待指令，甚至开始自保。`,options:[
+   {...q.options[0],text:`他们愿意试，也愿意承担一小步结果，只需要明确入口`},
+   {...q.options[1],text:`他们想配合，但不知道怎样做才算真正帮上忙`},
+   {...q.options[2],text:`他们反馈很多困难，像是在提醒风险或请求支援`},
+   {...q.options[3],text:`他们已经少说、少动、少担责，开始用沉默或绕开来自保`}
   ]};
-  if(index===3)return {...q,title:`“${short}”主要卡在流程交接，还是卡在跨部门/跨层级协同？`,note:`第四问看管理铰链：目标、资源、反馈和责任能不能在接口处接起来。`,options:[
-   {...q.options[0],text:`“${short}”常卡在上下游交接处，谁接下一棒不清楚`},
-   {...q.options[1],text:`“${short}”从目标到执行层层变形，理解不一致`},
-   {...q.options[2],text:`“${short}”牵涉多个部门或层级，资源和判断难以对齐`},
-   {...q.options[3],text:`大家表面支持“${short}”，但关键处会绕开或悬置`}
+  if(index===3)return {...q,title:`推进“${short}”时，管理接口现在顺不顺？`,note:`第四问看接口：谁决策、谁协调、谁接下一棒、问题怎么上来，这几件事是否接得住。`,options:[
+   {...q.options[0],text:`关键接口有人接，问题出现后也能及时拉齐`},
+   {...q.options[1],text:`接口有摩擦，但找到责任人后还能坐下来调整`},
+   {...q.options[2],text:`经常卡在交接处：上游说交了，下游说没法接`},
+   {...q.options[3],text:`关键接口已经变成内耗点，大家都想让别人先接锅`}
   ]};
-  if(index===4)return {...q,title:`围绕“${short}”，决策层能否稳定判断和分配资源？`,note:`第五问看战略位：目标、优先级和资源配置是否足够清楚。`,options:[
-   {...q.options[0],text:`“${short}”目标和优先级清楚，资源分配也能跟上`},
-   {...q.options[1],text:`“${short}”大方向清楚，但取舍标准还需要再压实`},
-   {...q.options[2],text:`“${short}”判断摇摆，很多事情都重要，资源开始分散`},
-   {...q.options[3],text:`大家都在等“${short}”最后拍板，关键资源迟迟不落位`}
+  if(index===4)return {...q,title:`围绕“${short}”，关键决策现在清楚吗？`,note:`第五问看决策：不是问领导有没有想法，而是看目标、优先级、资源和拍板权是否真的落地。`,options:[
+   {...q.options[0],text:`目标、优先级和拍板人都清楚，资源也能跟着目标走`},
+   {...q.options[1],text:`大方向清楚，但哪些事该停、哪些事该保还没说透`},
+   {...q.options[2],text:`每件事都说重要，资源被分散，团队不知道该先保哪一个`},
+   {...q.options[3],text:`大家都在等最后拍板，关键资源迟迟不敢投、不敢停、不敢换`}
   ]};
-  return {...q,title:`围绕“${short}”，外部环境现在更像什么？`,note:`第六问看外部参照：市场、客户、政策、竞争或上级环境是在支持，还是在增加不确定性。`,options:[
-   {...q.options[0],text:`“${short}”外部环境相对清楚，可以按计划推进`},
-   {...q.options[1],text:`“${short}”外部有变化，但还在可解释范围内`},
-   {...q.options[2],text:`“${short}”外部变化正在打乱原来的节奏和假设`},
-   {...q.options[3],text:`“${short}”外部已经明显变局，原计划继续走会很危险`}
+  return {...q,title:`“${short}”面对的外部变化，现在压力有多大？`,note:`第六问看外部：客户、市场、政策、竞争、上级要求，是否已经改变原来的判断前提。`,options:[
+   {...q.options[0],text:`外部要求和变化基本清楚，按原计划推进问题不大`},
+   {...q.options[1],text:`外部有扰动，但还看得懂，暂时只需要调整节奏`},
+   {...q.options[2],text:`外部变化已经打乱原来的假设，内部需要重新对齐判断`},
+   {...q.options[3],text:`外部已经明显变局，继续按原计划走可能会把风险放大`}
   ]};
  });
 }

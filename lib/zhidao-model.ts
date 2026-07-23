@@ -222,11 +222,18 @@ export const diagnosisQuestions: DiagnosisQuestion[] = [
 
 export const sixDiagnosisQuestions: DiagnosisQuestion[] = [
   {
-    ...diagnosisQuestions[0],
+    key: "tau",
     line: 3,
     label: "第一问 · 三爻 / 运营效率",
+    title: "这件事到了执行现场，最像哪一种情况？",
+    note: "判断目标是否已经变成清楚的任务、节奏和交付责任。",
     axis: "三爻：执行现场是否能把目标变成结果",
-    options: diagnosisQuestions[0].options.map(option => ({ ...option, value: { ...option.value, line: 3, lineValue: option.value.tau === 0 ? "yang" : "yin" } }))
+    options: [
+      { text: "大家知道要做什么，也知道先交付哪一步", value: { tau: 0, line: 3, lineValue: "yang", weight: 1, bias: 0 }, evidence: "执行现场能接住目标，适合用短周期动作验证。" },
+      { text: "方向大致明白，但任务拆分和交付节奏还不够清楚", value: { tau: 0, line: 3, lineValue: "yang", weight: 2, bias: 1 }, evidence: "执行端有承接意愿，但需要把任务、责任和节奏压实。" },
+      { text: "会议上都同意，真正推进时就开始等待、拖延或反复解释", value: { tau: 1, line: 3, lineValue: "yin", weight: 2, bias: 1 }, evidence: "目标到执行之间出现断点，需要先找出卡住的交付接口。" },
+      { text: "现场已经明显推不动，继续压任务只会带来应付和内耗", value: { tau: 1, line: 3, lineValue: "yin", weight: 3, bias: 2 }, evidence: "执行现场进入高阻状态，需要先清障碍再谈加速。" }
+    ]
   },
   {
     key: "phase",

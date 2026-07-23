@@ -9,11 +9,11 @@ const articleBlock = page.slice(
 );
 
 test("issue article is slim, layered, and action-oriented", () => {
-  assert.match(articleBlock, /caseLead/);
-  assert.match(articleBlock, /articleCase\.turning/);
-  assert.match(articleBlock, /frameworks\[0\]\.action/);
-  assert.match(articleBlock, /frameworks\[1\]\.title/);
+  assert.ok(articleBlock.includes("caseLead"));
+  assert.ok(articleBlock.includes("articleCase.turning"));
+  assert.ok(articleBlock.includes("linciPower.pressure"));
+  assert.ok(articleBlock.includes("linciPower.move"));
   assert.ok((articleBlock.match(/frameworks\[/g) || []).length <= 4);
   assert.doesNotMatch(articleBlock, /Signal 1|Signal 2|Signal 3|Focus:|Action:|Linci |Last:/);
-  assert.doesNotMatch(articleBlock, /m\.lin/);
+  assert.ok(!articleBlock.includes("m.lin"));
 });

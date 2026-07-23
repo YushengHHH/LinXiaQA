@@ -2,7 +2,8 @@
 export type Generator = 1 | 2 | 3 | 4;
 export type LineKind = "yang" | "yin";
 export type TrigramName = "乾" | "兑" | "离" | "震" | "巽" | "坎" | "艮" | "坤";
-export type AnswerValue = { tau?: Binary; phase?: Binary; delta?: Binary; weight?: number; bias?: 0 | 1 | 2 };
+export type LinePosition = 1 | 2 | 3 | 4 | 5 | 6;
+export type AnswerValue = { tau?: Binary; phase?: Binary; delta?: Binary; weight?: number; bias?: 0 | 1 | 2; line?: LinePosition; lineValue?: LineKind };
 export type DiagnosisAnswer = AnswerValue | undefined;
 
 export type TrigramState = {
@@ -39,6 +40,7 @@ export type QuestionOption = {
 
 export type DiagnosisQuestion = {
   key: "tau" | "phase" | "delta";
+  line?: LinePosition;
   label: string;
   title: string;
   note: string;
@@ -218,6 +220,86 @@ export const diagnosisQuestions: DiagnosisQuestion[] = [
   }
 ];
 
+export const sixDiagnosisQuestions: DiagnosisQuestion[] = [
+  {
+    ...diagnosisQuestions[0],
+    line: 3,
+    label: "第一问 · 三爻 / 运营效率",
+    axis: "三爻：执行现场是否能把目标变成结果",
+    options: diagnosisQuestions[0].options.map(option => ({ ...option, value: { ...option.value, line: 3, lineValue: option.value.tau === 0 ? "yang" : "yin" } }))
+  },
+  {
+    key: "phase",
+    line: 2,
+    label: "第二问 · 二爻 / 资源韧性",
+    title: "围绕这件事，资源与承压状态更接近哪一种？",
+    note: "判断组织是不是有足够的人、时间、能力和预算承接目标。",
+    axis: "二爻：资源是否撑得住",
+    options: [
+      { text: "资源基本能承接，只需要把节奏排清楚", value: { phase: 0, line: 2, lineValue: "yang", weight: 1, bias: 0 }, evidence: "资源承接面尚可，适合先用小步快跑验证。" },
+      { text: "资源有一点紧，但还能靠优先级调整撑住", value: { phase: 0, line: 2, lineValue: "yang", weight: 2, bias: 0 }, evidence: "资源韧性仍在，但需要明确取舍。" },
+      { text: "资源、人手或能力明显不足，目标正在挤压现场", value: { phase: 1, line: 2, lineValue: "yin", weight: 2, bias: 1 }, evidence: "资源承接变弱，目标与供给之间开始脱节。" },
+      { text: "大家都在硬扛，继续推进会消耗关键人", value: { phase: 1, line: 2, lineValue: "yin", weight: 3, bias: 2 }, evidence: "资源韧性已到高压区，需要先止损再推进。" }
+    ]
+  },
+  {
+    key: "delta",
+    line: 1,
+    label: "第三问 · 初爻 / 基层活力",
+    title: "真正做事的人，现在还有多少主动性？",
+    note: "判断一线是否还有真实动能，还是只是在等待、应付或自保。",
+    axis: "初爻：一线真实动能",
+    options: [
+      { text: "一线愿意动，只需要给清楚入口", value: { delta: 0, line: 1, lineValue: "yang", weight: 1, bias: 0 }, evidence: "基层动能仍在，可以用明确接口激活。" },
+      { text: "一线想动，但不知道怎样才算有效", value: { delta: 0, line: 1, lineValue: "yang", weight: 2, bias: 0 }, evidence: "动能存在，但需要转译成可执行动作。" },
+      { text: "一线反馈不少，但更像是在求助或报警", value: { delta: 1, line: 1, lineValue: "yin", weight: 2, bias: 1 }, evidence: "基层信号上行，说明现场压力正在累积。" },
+      { text: "一线已经开始躲避、沉默或各自找活路", value: { delta: 1, line: 1, lineValue: "yin", weight: 3, bias: 2 }, evidence: "基层活力转弱，需要先恢复安全表达和真实反馈。" }
+    ]
+  },
+  {
+    key: "tau",
+    line: 4,
+    label: "第四问 · 四爻 / 管理铰链",
+    title: "上下之间、部门之间，接口现在顺不顺？",
+    note: "判断管理层是不是能把目标、资源、反馈和责任接起来。",
+    axis: "四爻：管理接口与协同铰链",
+    options: [
+      { text: "关键接口基本顺畅，有问题也能及时对齐", value: { line: 4, lineValue: "yang", weight: 1, bias: 0 }, evidence: "管理铰链仍能工作，适合先做局部优化。" },
+      { text: "接口有摩擦，但责任人还能坐下来调整", value: { line: 4, lineValue: "yang", weight: 2, bias: 1 }, evidence: "接口摩擦可见，仍可通过对齐修复。" },
+      { text: "部门或层级之间经常互相等待、互相解释", value: { line: 4, lineValue: "yin", weight: 2, bias: 1 }, evidence: "管理铰链变弱，责任和信息开始断裂。" },
+      { text: "关键接口已经变成内耗源，谁都不愿先接", value: { line: 4, lineValue: "yin", weight: 3, bias: 2 }, evidence: "协同接口进入高阻状态，需要重画边界。" }
+    ]
+  },
+  {
+    key: "phase",
+    line: 5,
+    label: "第五问 · 五爻 / 战略决策",
+    title: "决策层现在能不能稳定判断和分配资源？",
+    note: "判断目标、优先级和资源配置是否足够清楚。",
+    axis: "五爻：判断权与资源配置",
+    options: [
+      { text: "目标和优先级清楚，资源分配也能跟上", value: { line: 5, lineValue: "yang", weight: 1, bias: 0 }, evidence: "战略判断稳定，适合让执行端快速承接。" },
+      { text: "大方向清楚，但取舍标准还需要再压实", value: { line: 5, lineValue: "yang", weight: 2, bias: 1 }, evidence: "目标仍有牵引力，但资源排序需要更明确。" },
+      { text: "判断摇摆，很多事情都重要，资源开始分散", value: { line: 5, lineValue: "yin", weight: 2, bias: 1 }, evidence: "战略位转弱，组织容易进入多目标拉扯。" },
+      { text: "谁都在等最后拍板，关键资源迟迟不落位", value: { line: 5, lineValue: "yin", weight: 3, bias: 2 }, evidence: "判断权和资源配置失焦，需要先锁定不可让渡目标。" }
+    ]
+  },
+  {
+    key: "delta",
+    line: 6,
+    label: "第六问 · 上爻 / 外部环境",
+    title: "外部环境对这件事的影响，现在更像什么？",
+    note: "判断市场、客户、政策、竞争或上级环境是在支持，还是在增加不确定性。",
+    axis: "上爻：外部参照与环境压力",
+    options: [
+      { text: "外部环境相对清楚，可以按计划推进", value: { line: 6, lineValue: "yang", weight: 1, bias: 0 }, evidence: "外部参照稳定，内部可以优先解决承接问题。" },
+      { text: "外部有变化，但还在可解释范围内", value: { line: 6, lineValue: "yang", weight: 2, bias: 0 }, evidence: "环境有扰动，但尚未改变基本判断。" },
+      { text: "外部变化正在打乱原来的节奏和假设", value: { line: 6, lineValue: "yin", weight: 2, bias: 1 }, evidence: "外部压力增强，需要校准目标和响应边界。" },
+      { text: "外部已经明显变局，原计划继续走会很危险", value: { line: 6, lineValue: "yin", weight: 3, bias: 2 }, evidence: "外部参照失稳，需要优先重估方向。" }
+    ]
+  }
+];
+
 export const zhiDaoStates: ZhiDaoState[] = [
   { id: 0, name: "乾", code: "000", tau: 0, g: 1, delta: 0, title: "方向明确，执行受阻", symptom: "战略清晰，但团队并未真正跟进。", explanation: "建设优先、邻位链路、顺向传导同时出现，说明中心意志强，但承接机制偏弱。", inertiaId: 2, inertiaTitle: "依附增强，核心命脉变弱", warning: "继续靠中心推动，会用更大的声量换来更深的等待。", targetIds: [7, 4, 5], patterns: ["目标反复宣讲，实际动作仍停在原处", "会议里都认可，交付时各自等待", "核心人物越忙，外围越不敢判断"], misread: "容易被误判为执行力差，其实常是承接接口和反馈节奏没有被设计。", avoid: "不要继续加口号、加压力、加检查频次。", firstAction: "选一个最小交付接口，明确谁接、何时回、用什么证据证明已接住。" },
   { id: 1, name: "兑", code: "001", tau: 0, g: 1, delta: 1, title: "创新上行受阻", symptom: "一线有想法，却无法进入共同决策。", explanation: "建设意愿仍在，基层信号也活跃，但组织接口没有把新判断接入决策。", inertiaId: 6, inertiaTitle: "表达增加，真实改变减少", warning: "意见看似充分，关键资源仍不会流向新尝试。", targetIds: [5, 7, 3], patterns: ["一线不断提出改法，却总停在讨论层", "试点很多，授权和资源跟不上", "大家愿意说，但不知道谁能拍板"], misread: "容易被误判为想法太散，其实关键是上行信号没有进入资源配置。", avoid: "不要再开一轮泛泛征集意见。", firstAction: "把一个一线建议变成可决策提案：边界、资源、风险、7天证据一次写清。" },
@@ -236,6 +318,19 @@ export function resolveDiagnosis(answers: DiagnosisAnswer[]) {
   const g = (tau === 0 ? (phase === 0 ? 1 : 4) : (phase === 0 ? 2 : 3)) as Generator;
   const id = tau * 4 + phase * 2 + delta;
   return zhiDaoStates[id] || zhiDaoStates[0];
+}
+
+export function resolveHexagramDiagnosis(answers: DiagnosisAnswer[]) {
+  const byLine = new Map<LinePosition, LineKind>();
+  answers.forEach(answer => {
+    if (answer?.line && answer.lineValue) byLine.set(answer.line, answer.lineValue);
+  });
+  const line = (position: LinePosition) => byLine.get(position) || "yang";
+  const lowerLines = [line(1), line(2), line(3)].join("");
+  const upperLines = [line(4), line(5), line(6)].join("");
+  const lower = trigramStates.find(state => state.lines.join("") === lowerLines) || trigramStates[0];
+  const upper = trigramStates.find(state => state.lines.join("") === upperLines) || trigramStates[0];
+  return getHexagramState(upper.name, lower.name);
 }
 
 export function getState(id: number) {

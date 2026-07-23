@@ -10,6 +10,8 @@ test('topic detection gives visible feedback and remains usable', () => {
   assert.ok(page.includes('\u8f7b\u91cf\u8bed\u4e49\u8bc6\u522b'));
   assert.ok(page.includes('\u6a21\u7cca\u65f6\u8bf7\u4f60\u786e\u8ba4'));
   assert.ok(page.includes('\u53ef\u80fd\u662f'));
+  assert.ok(page.includes('\u5df2\u5148\u6309'));
+  assert.ok(page.includes('\u5df2\u4fdd\u7559\u5f53\u524d\u9009\u62e9'));
   assert.ok(page.includes('\u6b21\u8981\u4fe1\u53f7'));
   assert.ok(!page.includes('\u6682\u672a\u8bc6\u522b\u51fa\u660e\u786e\u8bdd\u9898'));
   assert.match(page, /boost=\(i:number\)/);
@@ -17,6 +19,8 @@ test('topic detection gives visible feedback and remains usable', () => {
   assert.ok(page.includes('\u4e00\u56e2\u6563\u6c99'));
   assert.ok(page.includes('\u529e\u516c\u5ba4'));
   assert.match(page, /gap<2/);
+  assert.match(page, /best\.score<2\)\{SP\(false\)/);
+  assert.match(page, /gap<2\)\{SP\(false\);SD\(best\.i\)/);
   assert.match(page, /disabled=\{naturalPending\}/);
   assert.match(page, /className="detect-btn"/);
   assert.match(page, /naturalPending/);

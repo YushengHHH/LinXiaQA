@@ -27,8 +27,14 @@ test("article forms a user-answer issue-claim linci-certification triangle", () 
   assert.ok(builder.includes("evidence="));
   assert.ok(builder.includes("claim="));
   assert.ok(builder.includes("certify="));
+  assert.ok(builder.includes("caseLead="));
+  assert.ok(builder.includes("person=base[0]"));
+  assert.ok(builder.includes("role=base[1]"));
   assert.ok(builder.includes("m.lin"));
   assert.ok(builder.includes("linciPower.first"));
   assert.ok(builder.includes("linciPower.last"));
   assert.ok(builder.includes("linciPower.tone"));
+  assert.ok(builder.includes("linciPower.cue"));
+  assert.ok(builder.includes("frameworks[0]?.title"));
+  assert.ok(builder.includes("frameworks[1]?.title"));
 });

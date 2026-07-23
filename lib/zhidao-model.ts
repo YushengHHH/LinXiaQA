@@ -1,7 +1,23 @@
 ﻿export type Binary = 0 | 1;
 export type Generator = 1 | 2 | 3 | 4;
+export type LineKind = "yang" | "yin";
+export type TrigramName = "乾" | "兑" | "离" | "震" | "巽" | "坎" | "艮" | "坤";
 export type AnswerValue = { tau?: Binary; phase?: Binary; delta?: Binary; weight?: number; bias?: 0 | 1 | 2 };
 export type DiagnosisAnswer = AnswerValue | undefined;
+
+export type TrigramState = {
+  id: number;
+  name: TrigramName;
+  code: `${Binary}${Binary}${Binary}`;
+  symbol: string;
+  lines: [LineKind, LineKind, LineKind];
+  meaning: string;
+  tau: Binary;
+  g: Generator;
+  delta: Binary;
+  managementName: string;
+  managementMeaning: string;
+};
 
 export type QuestionOption = {
   text: string;
@@ -52,6 +68,46 @@ export type StrategyPath = {
   prerequisite: string;
   moves: string[];
 };
+
+export const trigramStates: TrigramState[] = [
+  { id: 0, name: "乾", code: "000", symbol: "☰", lines: ["yang", "yang", "yang"], meaning: "三阳", tau: 0, g: 1, delta: 0, managementName: "方向明确，执行受阻", managementMeaning: "中心意志强，但承接接口和反馈节奏偏弱。" },
+  { id: 1, name: "兑", code: "001", symbol: "☱", lines: ["yin", "yang", "yang"], meaning: "上缺", tau: 0, g: 1, delta: 1, managementName: "创新上行受阻", managementMeaning: "一线信号活跃，但没有进入资源配置与共同决策。" },
+  { id: 2, name: "离", code: "010", symbol: "☲", lines: ["yang", "yin", "yang"], meaning: "中虚", tau: 0, g: 4, delta: 0, managementName: "资源充沛，方向模糊", managementMeaning: "机会与资源很多，但共同取舍标准尚未收束。" },
+  { id: 3, name: "震", code: "011", symbol: "☳", lines: ["yin", "yin", "yang"], meaning: "下动", tau: 0, g: 4, delta: 1, managementName: "基层活力与战略脱节", managementMeaning: "局部动能真实存在，但缺少组织级转译接口。" },
+  { id: 4, name: "巽", code: "100", symbol: "☴", lines: ["yang", "yang", "yin"], meaning: "下入", tau: 1, g: 2, delta: 0, managementName: "外部压力下的内部混乱", managementMeaning: "外部变化被内部结构放大，需要统一解释口径和响应边界。" },
+  { id: 5, name: "坎", code: "101", symbol: "☵", lines: ["yin", "yang", "yin"], meaning: "中实", tau: 1, g: 2, delta: 1, managementName: "底层动荡向上传导", managementMeaning: "真实现场信号正在上涌，系统需要恢复可听见性。" },
+  { id: 6, name: "艮", code: "110", symbol: "☶", lines: ["yang", "yin", "yin"], meaning: "上止", tau: 1, g: 3, delta: 0, managementName: "规则僵化，创新窒息", managementMeaning: "稳定机制压住试错空间，规则完整但判断变钝。" },
+  { id: 7, name: "坤", code: "111", symbol: "☷", lines: ["yin", "yin", "yin"], meaning: "三阴", tau: 1, g: 3, delta: 1, managementName: "隐性消耗，表面平静", managementMeaning: "表面柔顺，真实责任和判断正在下沉。" }
+];
+
+const trigramByName = new Map<TrigramName, TrigramState>(trigramStates.map(state => [state.name, state]));
+const trigramById = new Map<number, TrigramState>(trigramStates.map(state => [state.id, state]));
+
+export function getTrigramState(name?: string) {
+  return trigramByName.get(name as TrigramName) || trigramByName.get("乾")!;
+}
+
+export function getTrigramStateById(id: number) {
+  return trigramById.get(id) || trigramById.get(0)!;
+}
+
+export function validateTrigramStates() {
+  const errors: string[] = [];
+  const unique = <T>(items: T[]) => new Set(items).size === items.length;
+  if (trigramStates.length !== 8) errors.push(`八卦状态数量应为 8，当前为 ${trigramStates.length}`);
+  if (!unique(trigramStates.map(item => item.id))) errors.push("八卦 id 存在重复");
+  if (!unique(trigramStates.map(item => item.name))) errors.push("八卦名称存在重复");
+  if (!unique(trigramStates.map(item => item.symbol))) errors.push("八卦符号存在重复");
+  if (!unique(trigramStates.map(item => item.lines.join("")))) errors.push("八卦爻象存在重复");
+  trigramStates.forEach(item => {
+    const phase = item.g === 1 || item.g === 2 ? 0 : 1;
+    const expectedId = item.tau * 4 + phase * 2 + item.delta;
+    const expectedCode = `${item.tau}${phase}${item.delta}`;
+    if (item.id !== expectedId) errors.push(`${item.name} 的 id 与 tau/g/delta 不一致`);
+    if (item.code !== expectedCode) errors.push(`${item.name} 的 code 与 tau/g/delta 不一致`);
+  });
+  return { ok: errors.length === 0, errors };
+}
 
 export const diagnosisQuestions: DiagnosisQuestion[] = [
   {

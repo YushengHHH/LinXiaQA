@@ -33,7 +33,7 @@ export type HexagramState = {
 };
 
 export type DerivedHexagram = {
-  type: "psychological" | "structural";
+  type: "psychological" | "structural" | "target";
   title: string;
   question: string;
   from: HexagramState;
@@ -41,6 +41,20 @@ export type DerivedHexagram = {
   changedLines: LinePosition[];
   rationale: string;
   reading: string;
+};
+
+export type M64StrategyPath = {
+  tag: string;
+  name: string;
+  target: HexagramState;
+  changedLines: LinePosition[];
+  cost: string;
+  desc: string;
+  rationale: string;
+  metrics: { cost: number; resistance: number; speed: number; risk: number };
+  recommendation: string;
+  prerequisite: string;
+  moves: string[];
 };
 
 export type QuestionOption = {
@@ -402,6 +416,64 @@ export function deriveStructuralHexagram(current: HexagramState, answers: Diagno
     rationale: `优先观察四、五、上爻的接口、决策与外部压力；第 ${changedLines.join("、")} 爻显示结构惯性会先压向上层参照与管理接口。`,
     reading: `事理卦从「${current.name}」推向「${to.name}」，表达的是若不主动干预，组织结构更可能沿着压力较大的接口、决策或外部环境继续滑行。`
   };
+}
+
+const lineActionNames: Record<LinePosition, string> = {
+  1: "基层活力",
+  2: "资源韧性",
+  3: "运营效率",
+  4: "管理铰链",
+  5: "战略决策",
+  6: "外部环境"
+};
+
+export function deriveTargetHexagram(current: HexagramState, answers: DiagnosisAnswer[]): DerivedHexagram {
+  const weakLines = answers
+    .filter(answer => answer?.line && (answer.lineValue === "yin" || (answer.weight || 0) >= 3))
+    .map(answer => answer!.line!);
+  const changedLines = (weakLines.length ? weakLines : [answers.find(answer => answer?.line)?.line || 3]).slice(0, 3);
+  const lines = [...current.lines];
+  changedLines.forEach(line => { lines[line - 1] = "yang"; });
+  const to = hexagramFromLines(lines);
+  return {
+    type: "target",
+    title: "目标卦",
+    question: "这一步应该往哪里收束？",
+    from: current,
+    to,
+    changedLines,
+    rationale: `优先修复第 ${changedLines.join("、")} 爻，对应${changedLines.map(line => lineActionNames[line]).join("、")}。`,
+    reading: `目标卦从「${current.name}」指向「${to.name}」，表示先不追求全局完美，而是把最弱的几层恢复到可承接状态。`
+  };
+}
+
+export function buildM64StrategyPaths(current: HexagramState, target: HexagramState): M64StrategyPath[] {
+  const changed = current.lines
+    .map((line, index) => line !== target.lines[index] ? (index + 1) as LinePosition : undefined)
+    .filter(Boolean) as LinePosition[];
+  const first = changed.length ? changed : [3 as LinePosition];
+  const variants = [
+    { name: "顺势微调", take: first.slice(0, 1), cost: "低代价", metrics: { cost: 1, resistance: 2, speed: 5, risk: 2 } },
+    { name: "重点校正", take: first.slice(0, 2), cost: "中代价", metrics: { cost: 3, resistance: 3, speed: 3, risk: 3 } },
+    { name: "目标重构", take: first, cost: "高代价", metrics: { cost: 5, resistance: 5, speed: 2, risk: 4 } }
+  ];
+  return variants.map((variant, index) => ({
+    tag: String.fromCharCode(65 + index),
+    name: variant.name,
+    target,
+    changedLines: variant.take,
+    cost: variant.cost,
+    desc: `从「${current.name}」走向「${target.name}」，先处理${variant.take.map(line => lineActionNames[line]).join("、")}。`,
+    rationale: `M₆₄ 路径依据现状卦与目标卦的差异爻生成：第 ${variant.take.join("、")} 爻是本路径的先行动点。`,
+    metrics: variant.metrics,
+    recommendation: index === 0 ? "默认先推荐这条：先动一个爻位，用最小动作验证局面是否可动。" : index === 1 ? "当单点动作不足以改变反馈时，采用两爻联动校正。" : "当目标、接口和资源都需要同步重配时，再进入目标重构。",
+    prerequisite: index === 0 ? "确定一个可观察动作，并在 7 天内看证据。" : index === 1 ? "需要一个责任人协调两个相邻层面的变化。" : "需要明确授权、资源取舍和停止旧动作的边界。",
+    moves: [
+      `锁定：第 ${variant.take[0]} 爻 · ${lineActionNames[variant.take[0]]}`,
+      variant.take[1] ? `联动：第 ${variant.take[1]} 爻 · ${lineActionNames[variant.take[1]]}` : "取证：记录一个可验证反馈",
+      variant.take[2] ? `重构：第 ${variant.take[2]} 爻 · ${lineActionNames[variant.take[2]]}` : "复盘：决定是否扩大路径"
+    ]
+  }));
 }
 
 export function getState(id: number) {

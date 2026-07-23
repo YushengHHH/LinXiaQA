@@ -55,6 +55,17 @@ export type M64StrategyPath = {
   recommendation: string;
   prerequisite: string;
   moves: string[];
+  actions: LineActionTemplate[];
+};
+
+export type LineActionTemplate = {
+  line: LinePosition;
+  name: string;
+  diagnosis: string;
+  firstAction: string;
+  evidence: string;
+  avoid: string;
+  checkpoint: string;
 };
 
 export type QuestionOption = {
@@ -418,13 +429,22 @@ export function deriveStructuralHexagram(current: HexagramState, answers: Diagno
   };
 }
 
+export const lineActionMap: Record<LinePosition, LineActionTemplate> = {
+  1: { line: 1, name: "基层活力", diagnosis: "真正做事的人是否还愿意主动反馈、主动推进。", firstAction: "找一个一线真实场景，开一条不追责的事实反馈口。", evidence: "有人愿意说出具体阻滞，并愿意认领一个小动作。", avoid: "不要一上来追问态度、忠诚或执行力。", checkpoint: "48 小时内拿到 3 条现场事实。" },
+  2: { line: 2, name: "资源韧性", diagnosis: "人手、时间、能力和预算是否足以承接当前目标。", firstAction: "列出本周最挤压现场的三项资源冲突，先砍掉或延后一项。", evidence: "关键人从硬扛转为能说清取舍。", avoid: "不要在资源未重排前继续加目标。", checkpoint: "7 天内释放一个关键人或关键时段。" },
+  3: { line: 3, name: "运营效率", diagnosis: "目标是否已经变成明确任务、节奏和交付证据。", firstAction: "把目标压成一个两周内可交付的最小成果，并指定唯一验收证据。", evidence: "团队能说清先交付什么、谁验收、何时看结果。", avoid: "不要继续用大目标替代小交付。", checkpoint: "14 天内看到一个可验收成果。" },
+  4: { line: 4, name: "管理铰链", diagnosis: "上下之间、部门之间的接口是否能接住责任和反馈。", firstAction: "重画一个关键接口：谁输入、谁处理、谁拍板、谁反馈。", evidence: "争议从互相解释变成同看一张责任图。", avoid: "不要再开没有责任闭环的协调会。", checkpoint: "7 天内让一个接口完成一次闭环。" },
+  5: { line: 5, name: "战略决策", diagnosis: "目标、优先级和资源配置是否足够稳定。", firstAction: "请决策者明确一个不可让渡目标，以及两个暂时不做的事项。", evidence: "资源开始向唯一主目标集中。", avoid: "不要让多个都重要的目标继续并列。", checkpoint: "3 天内形成一条清晰取舍口径。" },
+  6: { line: 6, name: "外部环境", diagnosis: "市场、客户、政策、竞争或上级变化是否改写原判断。", firstAction: "整理一个外部变化清单，只保留会改变目标假设的三条信号。", evidence: "组织能区分噪声、扰动和真正变局。", avoid: "不要让每个部门各自解释外部变化。", checkpoint: "7 天内完成一次目标假设复核。" }
+};
+
 const lineActionNames: Record<LinePosition, string> = {
-  1: "基层活力",
-  2: "资源韧性",
-  3: "运营效率",
-  4: "管理铰链",
-  5: "战略决策",
-  6: "外部环境"
+  1: lineActionMap[1].name,
+  2: lineActionMap[2].name,
+  3: lineActionMap[3].name,
+  4: lineActionMap[4].name,
+  5: lineActionMap[5].name,
+  6: lineActionMap[6].name
 };
 
 export function deriveTargetHexagram(current: HexagramState, answers: DiagnosisAnswer[]): DerivedHexagram {
@@ -457,23 +477,26 @@ export function buildM64StrategyPaths(current: HexagramState, target: HexagramSt
     { name: "重点校正", take: first.slice(0, 2), cost: "中代价", metrics: { cost: 3, resistance: 3, speed: 3, risk: 3 } },
     { name: "目标重构", take: first, cost: "高代价", metrics: { cost: 5, resistance: 5, speed: 2, risk: 4 } }
   ];
-  return variants.map((variant, index) => ({
+  return variants.map((variant, index) => {
+    const actions = variant.take.map(line => lineActionMap[line]);
+    return ({
     tag: String.fromCharCode(65 + index),
     name: variant.name,
     target,
     changedLines: variant.take,
+    actions,
     cost: variant.cost,
     desc: `从「${current.name}」走向「${target.name}」，先处理${variant.take.map(line => lineActionNames[line]).join("、")}。`,
     rationale: `M₆₄ 路径依据现状卦与目标卦的差异爻生成：第 ${variant.take.join("、")} 爻是本路径的先行动点。`,
     metrics: variant.metrics,
-    recommendation: index === 0 ? "默认先推荐这条：先动一个爻位，用最小动作验证局面是否可动。" : index === 1 ? "当单点动作不足以改变反馈时，采用两爻联动校正。" : "当目标、接口和资源都需要同步重配时，再进入目标重构。",
+    recommendation: index === 0 ? `默认先推荐这条：先做「${actions[0].firstAction}」，用最小动作验证局面是否可动。` : index === 1 ? "当单点动作不足以改变反馈时，采用两爻联动校正。" : "当目标、接口和资源都需要同步重配时，再进入目标重构。",
     prerequisite: index === 0 ? "确定一个可观察动作，并在 7 天内看证据。" : index === 1 ? "需要一个责任人协调两个相邻层面的变化。" : "需要明确授权、资源取舍和停止旧动作的边界。",
     moves: [
-      `锁定：第 ${variant.take[0]} 爻 · ${lineActionNames[variant.take[0]]}`,
-      variant.take[1] ? `联动：第 ${variant.take[1]} 爻 · ${lineActionNames[variant.take[1]]}` : "取证：记录一个可验证反馈",
-      variant.take[2] ? `重构：第 ${variant.take[2]} 爻 · ${lineActionNames[variant.take[2]]}` : "复盘：决定是否扩大路径"
+      `锁定：${actions[0].firstAction}`,
+      actions[1] ? `联动：${actions[1].firstAction}` : `取证：${actions[0].evidence}`,
+      actions[2] ? `重构：${actions[2].firstAction}` : `复盘：${actions[0].checkpoint}`
     ]
-  }));
+  })});
 }
 
 export function getState(id: number) {

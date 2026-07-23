@@ -7,13 +7,28 @@ const articleBlock = page.slice(
   page.indexOf("let articleCase="),
   page.indexOf(",articleText=", page.indexOf("let articleCase=")),
 );
+const builder = page.slice(page.indexOf("function buildArticleCase"), page.indexOf("function buildFollowups"));
 
 test("issue article is slim, layered, and action-oriented", () => {
   assert.ok(articleBlock.includes("caseLead"));
-  assert.ok(articleBlock.includes("articleCase.turning"));
-  assert.ok(articleBlock.includes("linciPower.pressure"));
-  assert.ok(articleBlock.includes("linciPower.move"));
-  assert.ok((articleBlock.match(/frameworks\[/g) || []).length <= 4);
+  assert.ok(articleBlock.includes("articleCase.evidence"));
+  assert.ok(articleBlock.includes("articleCase.claim"));
+  assert.ok(articleBlock.includes("articleCase.certify"));
+  assert.ok(articleBlock.includes("articleCase.action"));
+  assert.ok(articleBlock.includes("articleCase.close"));
+  assert.ok((articleBlock.match(/articleCase\./g) || []).length <= 8);
   assert.doesNotMatch(articleBlock, /Signal 1|Signal 2|Signal 3|Focus:|Action:|Linci |Last:/);
-  assert.ok(!articleBlock.includes("m.lin"));
+  assert.ok(!articleBlock.includes("m.lin,"));
+});
+
+test("article forms a user-answer issue-claim linci-certification triangle", () => {
+  assert.ok(builder.includes("q0=dqs[0]?.q"));
+  assert.ok(builder.includes("choices=as.map"));
+  assert.ok(builder.includes("evidence="));
+  assert.ok(builder.includes("claim="));
+  assert.ok(builder.includes("certify="));
+  assert.ok(builder.includes("m.lin"));
+  assert.ok(builder.includes("linciPower.first"));
+  assert.ok(builder.includes("linciPower.last"));
+  assert.ok(builder.includes("linciPower.tone"));
 });

@@ -4,12 +4,25 @@ import { readFile } from "node:fs/promises";
 
 const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 
-test("diagnostic questions adapt across four modes and remember context", () => {
-  assert.match(page, /function buildDiagnostic/);
-  assert.match(page, /orders=\[\[0,1,2\],\[0,1,2\],\[2,0,1\],\[2,1,0\]\]/);
-  assert.match(page, /微小变化也算进展/);
-  assert.match(page, /刚才你选择了/);
-  assert.match(page, /dqs\[q-1\]\.op\[as\[q-1\]\]/);
+test("diagnostic questions use the user's natural-language context", () => {
+  const block = page.slice(page.indexOf("function contextProfile"), page.indexOf("const SYMBOL_RULES"));
+  assert.match(block, /function contextProfile/);
+  assert.match(block, /buildDiagnostic\(x:any,mode:number,hist:any\[\],inp:any/);
+  assert.match(block, /\\u4e00\\u56e2\\u548c\\u6c14/);
+  assert.match(block, /\\u6563\\u6c99/);
+  assert.match(block, /\\u8868\\u9762\\u548c\\u6c14\\u6b63\\u5728\\u906e\\u4f4f\\u771f\\u5b9e\\u5206\\u5de5/);
+  assert.match(block, /profile\.qs\.map/);
+  assert.match(block, /profile\.op\[i\]/);
+  assert.doesNotMatch(block, /\?{4,}/);
+  assert.doesNotMatch(block, /DOMAIN_CARE\.\?/);
+});
+
+test("personalized diagnosis anchor is shared by result, article, issue, and QA", () => {
+  assert.match(page, /dx=diagnosisView\(x,ri,inp\)/);
+  assert.match(page, /cx=\{\.\.\.x,core:dx\.core/);
+  assert.match(page, /<h1>\{dx\.title\}<\/h1>/);
+  assert.match(page, /articleCase=buildArticleCase\(cx,m,ri/);
+  assert.match(page, /双锚校准："\+dx\.title/);
 });
 
 test("three follow-ups are generated from both diagnosis and issue anchors", () => {

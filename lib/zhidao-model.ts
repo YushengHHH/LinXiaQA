@@ -19,6 +19,18 @@ export type TrigramState = {
   managementMeaning: string;
 };
 
+export type HexagramState = {
+  id: number;
+  name: string;
+  code: string;
+  upper: TrigramState;
+  lower: TrigramState;
+  lines: [LineKind, LineKind, LineKind, LineKind, LineKind, LineKind];
+  situationTitle: string;
+  coreContradiction: string;
+  managementReading: string;
+};
+
 export type QuestionOption = {
   text: string;
   value: AnswerValue;
@@ -105,6 +117,61 @@ export function validateTrigramStates() {
     const expectedCode = `${item.tau}${phase}${item.delta}`;
     if (item.id !== expectedId) errors.push(`${item.name} 的 id 与 tau/g/delta 不一致`);
     if (item.code !== expectedCode) errors.push(`${item.name} 的 code 与 tau/g/delta 不一致`);
+  });
+  return { ok: errors.length === 0, errors };
+}
+
+const hexagramNameGrid: Record<TrigramName, Record<TrigramName, string>> = {
+  乾: { 乾: "乾", 兑: "夬", 离: "大有", 震: "大壮", 巽: "小畜", 坎: "需", 艮: "大畜", 坤: "泰" },
+  兑: { 乾: "履", 兑: "兑", 离: "睽", 震: "归妹", 巽: "中孚", 坎: "节", 艮: "损", 坤: "临" },
+  离: { 乾: "同人", 兑: "革", 离: "离", 震: "丰", 巽: "家人", 坎: "既济", 艮: "贲", 坤: "明夷" },
+  震: { 乾: "无妄", 兑: "随", 离: "噬嗑", 震: "震", 巽: "益", 坎: "屯", 艮: "颐", 坤: "复" },
+  巽: { 乾: "姤", 兑: "大过", 离: "鼎", 震: "恒", 巽: "巽", 坎: "井", 艮: "蛊", 坤: "升" },
+  坎: { 乾: "讼", 兑: "困", 离: "未济", 震: "解", 巽: "涣", 坎: "坎", 艮: "蒙", 坤: "师" },
+  艮: { 乾: "遁", 兑: "咸", 离: "旅", 震: "小过", 巽: "渐", 坎: "蹇", 艮: "艮", 坤: "谦" },
+  坤: { 乾: "否", 兑: "萃", 离: "晋", 震: "豫", 巽: "观", 坎: "比", 艮: "剥", 坤: "坤" }
+};
+
+function buildHexagramState(upper: TrigramState, lower: TrigramState): HexagramState {
+  const id = upper.id * 8 + lower.id;
+  const name = hexagramNameGrid[upper.name][lower.name];
+  const paired = upper.id === lower.id;
+  return {
+    id,
+    name,
+    code: `${upper.code}-${lower.code}`,
+    upper,
+    lower,
+    lines: [...lower.lines, ...upper.lines] as HexagramState["lines"],
+    situationTitle: paired ? `${upper.managementName}的自我叠加` : `${lower.managementName}遇到${upper.managementName}`,
+    coreContradiction: paired ? "内外同构，优势与惯性会同时放大。" : "内部状态与外部参照不完全一致，需要判断先调整承接面还是参照面。",
+    managementReading: `下卦「${lower.name}」表示组织内部的实际承接，上卦「${upper.name}」表示外部参照、管理压力或目标牵引。`
+  };
+}
+
+export const hexagramStates: HexagramState[] = trigramStates.flatMap(upper => trigramStates.map(lower => buildHexagramState(upper, lower)));
+
+const hexagramById = new Map<number, HexagramState>(hexagramStates.map(state => [state.id, state]));
+const hexagramByPair = new Map<string, HexagramState>(hexagramStates.map(state => [`${state.upper.name}-${state.lower.name}`, state]));
+
+export function getHexagramState(upper: TrigramName, lower: TrigramName) {
+  return hexagramByPair.get(`${upper}-${lower}`) || hexagramStates[0];
+}
+
+export function getHexagramStateById(id: number) {
+  return hexagramById.get(id) || hexagramStates[0];
+}
+
+export function validateHexagramStates() {
+  const errors: string[] = [];
+  const unique = <T>(items: T[]) => new Set(items).size === items.length;
+  if (hexagramStates.length !== 64) errors.push(`六十四卦状态数量应为 64，当前为 ${hexagramStates.length}`);
+  if (!unique(hexagramStates.map(item => item.id))) errors.push("六十四卦 id 存在重复");
+  if (!unique(hexagramStates.map(item => `${item.upper.name}-${item.lower.name}`))) errors.push("上下卦组合存在重复");
+  if (!unique(hexagramStates.map(item => item.name))) errors.push("六十四卦名称存在重复");
+  hexagramStates.forEach(item => {
+    if (item.lines.length !== 6) errors.push(`${item.name} 的六爻长度不正确`);
+    if (item.code !== `${item.upper.code}-${item.lower.code}`) errors.push(`${item.name} 的 code 与上下卦不一致`);
   });
   return { ok: errors.length === 0, errors };
 }

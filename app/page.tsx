@@ -145,7 +145,7 @@ export default function Home(){
  const nav=(s:Screen)=>{setScreen(s);scrollTo(0,0)};
  function start(){setStep(-1);setFocus("");setAnswers([]);setPath(0);setSaved(false);setRevisit(null);setFeedback("");nav("diagnose")}
  function submitComplaint(){setComplaint(topic);setStep(-2)}
- function startRevisit(r:RecordItem){setRevisit(r);setComplaint(`复诊：${r.topic||r.target}\n\n上次行动：${r.action||r.summary||"尚未记录"}\n上次反馈：${r.feedback||"尚未填写"}\n\n这 7/14 天的新变化：`);setFocus("");setAnswers([]);setPath(0);setSaved(false);setFeedback("");setStep(-1);nav("diagnose")}
+ function startRevisit(r:RecordItem){const taskBrief=revisitTasks.map((task,i)=>`${i+1}. ${task.title}｜状态：${taskStates[task.title]||"未完成"}｜依据：${task.why}`).join("\n");setRevisit(r);setComplaint(`复诊：${r.topic||r.target}\n\n上次行动：${r.action||r.summary||"尚未记录"}\n上次反馈：${r.feedback||"尚未填写"}\n\n复诊任务状态：\n${taskBrief||"暂无任务状态"}\n\n这 7/14 天的新变化：`);setFocus("");setAnswers([]);setPath(0);setSaved(false);setFeedback("");setStep(-1);nav("diagnose")}
  function chooseFocus(id:string){setFocus(id);setStep(0)}
  function answer(value:AnswerValue){let next=[...answers];next[step]=value;setAnswers(next);if(step<activeQuestions.length-1)setStep(step+1);else nav("map")}
  function updateTaskState(title:string,state:TaskState){const next={...taskStates,[title]:state};setTaskStates(next);localStorage.setItem("linxia-fskn-task-states",JSON.stringify(next))}

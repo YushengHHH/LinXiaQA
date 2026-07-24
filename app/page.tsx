@@ -1,204 +1,187 @@
 ﻿"use client";
-import {Fragment,useEffect,useMemo,useState} from "react";
-import {buildM64StrategyPaths,derivePsychologicalHexagram,deriveStructuralHexagram,deriveTargetHexagram,getState,getTrigramState,hexagramStates,lineActionMap,resolveDiagnosis,resolveHexagramDiagnosis,sixDiagnosisQuestions,trigramStates,type AnswerValue,type DerivedHexagram,type LineActionTemplate} from "../lib/zhidao-model";
+import { BrandMark } from "./brand-mark";
+import { DiagnosisPage } from "./diagnosis-page";
+import { HistoryPage } from "./history-page";
+import { HomePage } from "./home-page";
+import { ReportPage } from "./report-page";
+import { SystemPage } from "./system-page";
+import { useDiagnosisController } from "./use-diagnosis-controller";
+export default function Home() {
+  const {
+    screen,
+    nav,
+    start,
+    records,
+    setRecords,
+    taskStates,
+    setTaskStates,
+    step,
+    setStep,
+    revisit,
+    complaint,
+    setComplaint,
+    lens,
+    profile,
+    activeQuestions,
+    focusOptions,
+    submitComplaint,
+    chooseFocus,
+    answer,
+    currentHex,
+    psychHex,
+    structHex,
+    targetHex,
+    hex,
+    chosen,
+    targetPaths,
+    riskLevel,
+    taskImpact,
+    answers,
+    evidence,
+    topic,
+    actionPlan,
+    path,
+    setPath,
+    feedback,
+    setFeedback,
+    nextReview,
+    mode,
+    setMode,
+    modes,
+    save,
+    saved,
+    startRevisit,
+  } = useDiagnosisController();
+  return (
+    <main>
+      <header className="top">
+        <button className="brand" onClick={() => nav("home")}>
+          <BrandMark className="brand-symbol" />
+          <span>
+            <b>知道 · 管理</b>
+            <small>林下问路｜网罟天下，以佃以渔</small>
+          </span>
+        </button>
+        <nav>
+          <button onClick={start}>处境诊断</button>
+          <button onClick={() => nav("system")}>方法体系</button>
+          <button onClick={() => nav("history")}>
+            演化记录 <i>{records.length}</i>
+          </button>
+        </nav>
+      </header>
+      {screen !== "home" && (
+        <>
+          <div className="subnav">
+            <button onClick={() => nav("home")}>← 林下入口</button>
+            <ol>
+              {["知境", "见势", "择路", "迭代"].map((x, i) => (
+                <li
+                  className={
+                    (screen === "diagnose" && i <= 0) ||
+                    (screen === "map" && i <= 2) ||
+                    screen === "history"
+                      ? "on"
+                      : ""
+                  }
+                  key={x}
+                >
+                  <span>0{i + 1}</span>
+                  {x}
+                </li>
+              ))}
+            </ol>
+            <b>FSKN / V6.0</b>
+          </div>
+          <div className="ui-legend">
+            <span>
+              <b>深色/箭头</b>可点击动作
+            </span>
+            <span>
+              <b>浅色标签</b>诊断信息
+            </span>
+            <span>
+              <b>边框卡片</b>解释内容
+            </span>
+          </div>
+        </>
+      )}
 
-type Screen="home"|"diagnose"|"map"|"system"|"history";
-type RecordItem={date:string,hex:string,target:string,mode:string,progress:number,topic?:string,state?:string,risk?:string,pathName?:string,summary?:string,action?:string,feedback?:string,nextReview?:string,closedLoop?:string,lineDiffs?:string[],recalcPath?:string,rewrittenActions?:string[],conclusionDiff?:string,trendVerdict?:string,trendBasis?:string};
-type TaskState="未完成"|"已完成"|"有变化";
-const modes=[{name:"自动驾驶",desc:"系统在每个节点自动重新寻优"},{name:"半自动",desc:"目标变化时先请你确认"},{name:"手动锁定",desc:"终点不变，只重算路径"},{name:"静默陪伴",desc:"不主动打扰，打开时再更新"}];
-const focusOptions=[
- {id:"people",label:"人不动",desc:"方向知道，但相关人没有真正开始行动。",profile:{action:"推进受阻",relation:"目标-执行",risk:"停滞"}},
- {id:"resource",label:"资源不够",desc:"不是不想做，而是人手、时间、能力或预算撑不住。",profile:{action:"资源错配",relation:"目标-资源",risk:"失焦"}},
- {id:"judgment",label:"判断不清",desc:"大家对什么最重要、谁来拍板、下一步看什么没有共识。",profile:{action:"信息失真",relation:"上下传导",risk:"失真"}},
- {id:"relation",label:"关系卡住",desc:"跨部门、上下级或责任边界让事情绕来绕去。",profile:{action:"责任悬置",relation:"横向协作",risk:"内耗"}}
-];
-const lenses=[
- {id:"execution",name:"执行推进",keys:["执行","推进","推不动","落地","交付","目标","进度"],hint:"这像是目标与行动之间的断点。"},
- {id:"resource",name:"资源能力",keys:["资源","人手","能力","预算","时间","支持","忙"],hint:"这像是供给、负荷与优先级之间的错位。"},
- {id:"relation",name:"协作关系",keys:["部门","协作","沟通","扯皮","配合","对齐","责任"],hint:"这像是关系接口和责任边界出现了摩擦。"},
- {id:"decision",name:"判断决策",keys:["决策","拍板","高层","反馈","一线","基层","信息"],hint:"这像是判断权与真实信息之间的传导问题。"},
- {id:"rule",name:"规则流程",keys:["流程","规则","审批","制度","合规","创新","试错"],hint:"这像是稳定机制压住了变化空间。"}
-];
+      {screen === "home" && (
+        <HomePage start={start} openSystem={() => nav("system")} />
+      )}
 
-function BrandMark({className=""}:{className?:string}){return <svg className={`brand-mark ${className}`} viewBox="0 0 120 120" aria-hidden="true"><g fill="none" strokeLinecap="butt"><path className="mark-deep mark-wide" d="M28 0 L54 26 M66 38 L82 54 M94 66 L120 92"/><path className="mark-soft mark-thin" d="M0 28 L26 54 M38 66 L54 82 M66 94 L92 120"/><path className="mark-deep mark-wide" d="M0 92 L26 66 M38 54 L54 38 M66 26 L92 0"/><path className="mark-soft mark-thin" d="M28 120 L54 94 M66 82 L82 66 M94 54 L120 28"/></g><circle className="mark-dot" cx="60" cy="60" r="2.8"/></svg>}
-function Trigram({code,name}:{code?:string;name?:string}){const meta=getTrigramState(name);return <span className="trigram trigram-verified" aria-label={`${meta.name} ${meta.symbol} ${meta.meaning} ${code||meta.code}`}><b>{meta.symbol}</b><em>{meta.name}</em><span>{meta.lines.map((v,i)=><i className={v} key={i}/>)}</span></span>}
-function HexagramMark({name,upper,lower,code}:{name:string;upper:string;lower:string;code:string}){const up=getTrigramState(upper),down=getTrigramState(lower);return <span className="hexagram-mark" aria-label={`${name} ${upper}上${lower}下 ${code}`}><b>{name}</b><em>{up.symbol}{down.symbol}</em><span>{[...up.lines,...down.lines].map((v,i)=><i className={v} key={i}/>)}</span></span>}
-const guaNames=["坤","剥","比","观","豫","晋","萃","否","谦","艮","蹇","渐","小过","旅","咸","遁","师","蒙","坎","涣","解","未济","困","讼","升","蛊","井","巽","恒","鼎","大过","姤","复","颐","屯","益","震","噬嗑","随","无妄","明夷","贲","既济","家人","丰","离","革","同人","临","损","节","中孚","归妹","睽","兑","履","泰","大畜","需","小畜","大壮","大有","夬","乾"];
-function makeChangeScene(){const fromCode=Math.floor(Math.random()*64),moving=Math.floor(Math.random()*6),toCode=fromCode^(1<<moving),toLines=Array.from({length:6},(_,i)=>(toCode>>i)&1);return{from:guaNames[fromCode],to:guaNames[toCode],moving,toLines}}
-function DynamicChange(){const[scene,setScene]=useState({from:"乾",to:"履",moving:2,toLines:[1,1,0,1,1,1]});useEffect(()=>{setScene(makeChangeScene());const timer=setInterval(()=>setScene(makeChangeScene()),4200);return()=>clearInterval(timer)},[]);return <div className="change-stage" aria-label="动态变卦演示"><div className="change-meta"><span>动态变卦 · 随机一爻</span><b>{scene.from}之{scene.to}</b><small>一次变卦，多种可能</small></div><div className="six-lines">{scene.toLines.map((v,i)=><i className={`${v?"yang":"yin"} ${i===scene.moving?"moving":""}`} key={`${scene.from}-${scene.to}-${i}`}><span/><span/></i>)}</div><em className="change-word change">变易</em><em className="change-word constant">不易</em><em className="change-word simple">简易</em><div className="change-caption"><span>本卦 · {scene.from}</span><i>第 {scene.moving+1} 爻变</i><span>之卦 · {scene.to}</span></div></div>}
-function PathMetrics({metrics}:{metrics:{cost:number;resistance:number;speed:number;risk:number}}){return <div className="path-metrics">{[["代价",metrics.cost],["阻力",metrics.resistance],["见效",metrics.speed],["风险",metrics.risk]].map(([label,value])=><span key={label as string}><small>{label}</small><i><em style={{width:`${Number(value)*20}%`}}/></i><b>{value}/5</b></span>)}</div>}
-function PathReason({path,isDefault}:{path:{recommendation:string;notFirst?:string;prerequisite:string};isDefault?:boolean}){return <div className="path-reason"><p><b>{isDefault?"为什么默认推荐":"为什么暂不优先"}</b>{isDefault?path.recommendation:(path.notFirst||path.recommendation)}</p><p><b>启动前提</b>{path.prerequisite}</p></div>}
-function PathFeedback({path}:{path:{name:string;cost:string;prerequisite:string}}){const texts:{[key:string]:string}={顺势微调:"你选择了低代价快速验证路径。先不要追求完整解决，而是用一个小接口证明局面能动。",重构跃迁:"你选择了结构重构路径。它更有力度，但会触动责任、资源和协作边界，需要准备承压。",理想靶心:"你选择了目标切换路径。这是高代价选择，建议先确认授权、共识和不可让渡的目标内核。"};return <div className="path-feedback"><small>当前选择反馈</small><b>{path.name} · {path.cost}</b><p>{texts[path.name]||texts.顺势微调}</p><em>{path.prerequisite}</em></div>}
-function ActionMapping({actions}:{actions:LineActionTemplate[]}){return <div className="action-mapping"><small>M₆₄ 路径行动映射 V0.1</small>{actions.map(action=><article key={action.line}><span>第{action.line}爻</span><div><b>{action.name}</b><p>{action.diagnosis}</p><em>先做：{action.firstAction}</em><i>证据：{action.evidence}</i><i>勿做：{action.avoid}</i></div></article>)}</div>}
-function ActionFeedback({feedback,setFeedback,nextReview}:{feedback:string;setFeedback:(v:string)=>void;nextReview:string}){return <div className="feedback-loop"><aside><p className="eyebrow">M₆₄ 行动反馈闭环 V0.1</p><h2>做完以后，回来写一笔。</h2><p>闭环不是写总结，而是留下三类证据：做了什么、局面有没有动、下一次复诊要看什么。</p></aside><div><label>行动反馈</label><textarea value={feedback} onChange={e=>setFeedback(e.target.value)} placeholder="例如：我暂停了一个反复拉扯的协调会，改成由一个责任人收口；一线反馈更具体了，但资源冲突还没有解决。"/><div className="feedback-tags"><span>做了什么</span><span>看见什么证据</span><span>还卡在哪里</span></div><p><b>建议复诊点</b>{nextReview}</p></div></div>}
-function getRiskLevel(answers:(AnswerValue|undefined)[]){const total=answers.reduce((sum,a)=>sum+(a?.weight||0),0);return total>=8?{key:"high",label:"强烈预警",total,tone:"这个风险已经不只是倾向，而是正在变成组织默认路径。"}:total>=5?{key:"mid",label:"中度预警",total,tone:"这个风险正在积累，需要尽快用一个小动作打断惯性。"}:{key:"low",label:"轻度提醒",total,tone:"这个风险还处在可观察阶段，先用低代价动作验证即可。"}}
-function buildActionPlan(hex:{firstAction:string},path:{name:string;moves:string[]},risk:{key:string;label:string}){const firstMove=path.moves[0]||hex.firstAction,secondMove=path.moves[1]||"复核行动后的反馈",thirdMove=path.moves[2]||"决定是否扩大动作";const plans={low:{type:"观察动作",headline:"先观察一个可验证信号",first:`围绕「${path.name}」先记录一个最小事实：${hex.firstAction}`,note:"轻度提醒阶段先不要扩大动作，用一次观察确认局面是否真的如此。",moves:[`观察：${firstMove}`,`复核：${secondMove}`,`决定：${thirdMove}`]},mid:{type:"干预动作",headline:"先打断一个正在积累的惯性",first:`围绕「${path.name}」立刻安排一次小干预：${hex.firstAction}`,note:"中度预警阶段不要只观察，要用一个低风险动作改变反馈节奏。",moves:[`干预：${firstMove}`,`对齐：${secondMove}`,`复盘：${thirdMove}`]},high:{type:"止损/止血动作",headline:"先止住一个会继续放大的损耗",first:`围绕「${path.name}」先暂停一个会放大风险的动作，再执行：${hex.firstAction}`,note:"强烈预警阶段先止血，再优化；不要让组织继续沿惯性滑行。",moves:["止血：暂停一个正在放大风险的动作",`重置：${firstMove}`,`收敛：${thirdMove}`]}};return plans[risk.key as "low"|"mid"|"high"]||plans.low}
-function makeTrendVerdict(diffPair:RecordItem[]){if(diffPair.length<2)return{title:"等待成势",body:"还需要至少两次复诊摘要，才能判断趋势是在改善、反复、转向还是停滞。",focus:"下一次先补足行动反馈。",basis:["复诊样本不足：目前少于两次带差异摘要的复诊。","行动证据不足：还不能比较路径、风险和任务修正的连续变化。","下一步依据：先补一次带反馈的复诊记录。"]};const now=diffPair[0],prev=diffPair[1],nowText=now.conclusionDiff||"",pathChanged=now.pathName!==prev.pathName,riskChanged=now.risk!==prev.risk,taskUp=nowText.includes("任务修正：+"),taskDown=nowText.includes("任务修正：-"),feedbackClosed=!!now.feedback,basis=[`路径依据：${pathChanged?`从「${prev.pathName||"未记录"}」变为「${now.pathName||"未记录"}」`:"最近两次路径名称未明显改变"}`,`风险依据：${riskChanged?"风险描述发生变化":"风险描述暂未明显变化"}`,`任务依据：${taskUp?"任务修正上调，说明未完成或新变化增加阻力":taskDown?"任务修正下调，说明任务完成正在释放阻力":"任务修正没有明显改变"}`,`反馈依据：${feedbackClosed?"本次记录带有行动反馈，可进入闭环判断":"本次未记录行动反馈，趋势判断仍偏保守"}`];if(pathChanged)return{title:"路已转向，先稳边界",body:"连续摘要显示路径发生变化，说明问题定义、目标边界或资源条件正在移动。此时不要急着扩大动作，先确认目标、授权和关键接口。",focus:"下一次复诊看目标边界是否更清楚。",basis};if(taskUp)return{title:"风险未降，卡在任务闭环",body:"任务修正仍在上调复诊强度，说明未完成或新变化正在拖住风险下降。先收敛任务，再谈换路。",focus:"下一次复诊优先核对未完成任务。",basis};if(taskDown)return{title:"阻滞松动，可以小步巩固",body:"任务状态开始降低原阻滞权重，说明至少一部分行动已经产生承接力。暂不必大改路径，先巩固有效动作。",focus:"下一次复诊看有效动作能否复制到第二个接口。",basis};if(riskChanged)return{title:"风险在变，先看证据方向",body:"连续摘要显示风险口径变化，但路径还没有明显转向。现在关键不是加动作，而是确认风险是在下降，还是换了表现形式。",focus:"下一次复诊补一条正反证据。",basis};return{title:"连续观察，仍需新证据",body:"连续摘要变化不大，说明系统暂未捕捉到明显转向。可能是局面稳定，也可能是复诊材料不够尖锐。",focus:"下一次复诊带一个反例或新变化。",basis}}
-function ReportSummary({currentHex,psychHex,structHex,targetHex,hex,path}:{currentHex:{name:string;situationTitle:string;upper:{name:string};lower:{name:string}};psychHex:DerivedHexagram;structHex:DerivedHexagram;targetHex:DerivedHexagram;hex:{name:string;title:string};path:{name:string;recommendation:string}}){return <div className="report-summary"><small>诊断报告摘要 V0.5 · M₆₄ 主报告</small><ol><li><b>主诊断卦</b><span>当前主判断是「{currentHex.name} · {currentHex.situationTitle}」，即{currentHex.upper.name}上{currentHex.lower.name}下。</span></li><li><b>双重惯性</b><span>心理卦为「{psychHex.to.name}」，事理卦为「{structHex.to.name}」；二者都从 M₆₄ 六爻现状卦推得。</span></li><li><b>目标与路径</b><span>目标卦为「{targetHex.to.name}」，建议先走「{path.name}」：{path.recommendation} 基础态「{hex.name}」仅作底层参考。</span></li></ol></div>}
-function DerivedHexCard({item}:{item:DerivedHexagram}){const cls=item.type==="psychological"?"report-psych":item.type==="target"?"report-target":"report-struct";return <article className={cls}><small>{item.title} · M₆₄ V0.1</small><div><HexagramMark name={item.to.name} upper={item.to.upper.name} lower={item.to.lower.name} code={item.to.code}/></div><h2>{item.question}</h2><p>{item.reading}</p><em className="risk-tone">{item.rationale}</em><span className="risk-total">变爻：{item.changedLines.map(line=>`第${line}爻`).join("、")}</span></article>}
-function RevisitCompare({record,currentHex,risk,taskImpact}:{record:RecordItem;currentHex:{name:string;situationTitle:string;lines:("yang"|"yin")[]};risk:{key:string;label:string};taskImpact?:{delta:number;notes:string[]}}){
- const oldHex=(record.hex||record.state||"").split(" · ")[0]||"上次状态";
- const oldState=hexagramStates.find(item=>item.name===oldHex);
- const oldRisk=record.risk?.match(/风险强度：([^。]+)/)?.[1]||"上次风险未记录";
- const moved=oldHex!==currentHex.name;
- const feedback=record.feedback?.trim();
- const riskTone=risk.key==="high"?"风险仍在高位，先止损再优化。":risk.key==="mid"?"风险仍在积累，需要看行动证据是否变强。":"风险已有缓和迹象，可以用小动作继续验证。";
- const diffs=oldState?currentHex.lines.map((line,index)=>({line:index+1,from:oldState.lines[index],to:line,action:lineActionMap[(index+1) as 1|2|3|4|5|6]})).filter(item=>item.from!==item.to):[];
- const weaker=diffs.filter(item=>item.to==="yin").length;
- const stronger=diffs.filter(item=>item.to==="yang").length;
- const pathDecision=risk.key==="high"||weaker>=2?{name:"目标重构",tone:"升级路径",reason:"风险仍高或多层转弱，原路径不足以承接，需要重估目标、授权与资源边界。"}:weaker===1?{name:"重点校正",tone:"换路校正",reason:"有一个关键爻位转弱，说明原动作需要联动一个管理层面，不宜只做单点观察。"}:stronger>0?{name:"顺势微调",tone:"降阶巩固",reason:"已有爻位转强，说明行动开始产生证据，先用低代价动作巩固变化。"}:{name:record.pathName||"顺势微调",tone:"继续观察",reason:"六爻结构暂未明显变化，先保留原路径，但下一轮必须补足行动证据。"};
- const pivot=diffs[0]?.action;
- const recalcMoves=pathDecision.name==="目标重构"?["今天：暂停一个会继续放大风险的旧动作","7 天内：重新确认目标、授权和资源取舍","14 天内：只保留一条可验证的新路径"]:pathDecision.name==="重点校正"?[`今天：围绕「${pivot?.name||"关键卡点"}」补一次事实取证`,`7 天内：联动一个相邻管理层面，明确责任接口`,`14 天内：复盘新证据，决定是否继续换路`]:pathDecision.name==="顺势微调"?[`今天：保留已经有效的小动作，不急着扩大`,`7 天内：围绕「${pivot?.name||"转强层面"}」补一条验证证据`,`14 天内：若信号稳定，再扩大到第二个接口`]:["今天：补写上次行动事实","7 天内：观察同一爻位是否出现新证据","14 天内：再决定继续原路还是换路"];
- const verdict=diffs.length?`爻变：${diffs.map(item=>`第${item.line}爻`).join("、")}`:(moved?"换卡点":"同卦延续");
- const conclusion=taskImpact&&taskImpact.delta>0?`任务状态把复诊强度上调 ${taskImpact.delta}：说明还有未完成或出现新变化的任务，风险暂不宜判定为下降。`:taskImpact&&taskImpact.delta<0?`任务状态把复诊强度下调 ${Math.abs(taskImpact.delta)}：说明已有任务完成，原阻滞有所松动，但仍需看六问证据。`:"本次主要依据六问与爻级变化判断，任务状态暂未明显改变权重。";
- return <div className={`revisit-compare ${moved?"moved":"stable"}`}><small>M₆₄ 复诊结论差异提示 V0.1</small><div><span><b>上次主卦</b>{oldHex}</span><i>{moved?"→":"≈"}</i><span><b>本次主卦</b>{currentHex.name}</span><em>{verdict}</em></div><p>{diffs.length?`这次具体变化落在${diffs.map(item=>`「${item.action.name}」`).join("、")}。系统据此重算路径：${pathDecision.tone}，建议转入「${pathDecision.name}」，并同步改写下一段行动。`:moved?`主诊断已从「${oldHex}」转向「${currentHex.name}」，但暂未定位到可反查的爻级差异，先按换卡点处理。`:`本次仍接近「${currentHex.name}」，六爻结构也没有明显变化，重点要看上次行动有没有产生证据。`}</p><div className="conclusion-diff"><b>这次和上次相比</b><span>{oldRisk} → {risk.label}</span><span>{record.pathName&&record.pathName!==pathDecision.name?`路径从「${record.pathName}」转向「${pathDecision.name}」`:`路径判断：${pathDecision.name}`}</span><em>{conclusion}</em></div>{diffs.length>0&&<ol className="line-diff">{diffs.map(item=><li key={item.line}><span>第{item.line}爻</span><div><b>{item.action.name}</b><p>{item.from==="yin"?"上次偏弱":"上次可承接"} → {item.to==="yin"?"本次偏弱":"本次可承接"}</p><small>{item.to==="yang"?`这一层正在恢复承接力：${item.action.evidence}`:`这一层转弱或仍弱：${item.action.diagnosis}`}</small></div></li>)}</ol>}<div className="path-recalc"><small>路径重算</small><b>{pathDecision.tone} · {pathDecision.name}</b><p>{pathDecision.reason}</p><em>上次路径：{record.pathName||"未记录"}；本次建议：{pathDecision.name}</em><ol className="action-rewrite">{recalcMoves.map((move,index)=><li key={move}><span>0{index+1}</span><b>{move}</b></li>)}</ol></div><ul><li><b>风险变化</b><span>{oldRisk} → {risk.label}。{riskTone}</span></li><li><b>行动反馈</b><span>{feedback?`上次记录：“${feedback}”`:"上次还没有记录行动反馈，本次复诊只能先比较卦象与风险。"}</span></li><li><b>复诊判断</b><span>{feedback?"把反馈与新行动对照：若行动层对应爻位转强，先巩固；若转弱，立刻换动作或换路。":"建议本次保存时补写行动反馈，下一轮才能判断新动作是否撬动了对应爻位。"}</span></li></ul></div>
-}
-function TrigramAudit(){return <div className="trigram-audit"><p className="eyebrow">八卦校验表 V0.1 · 完整匹配机制</p><h2>卦名、符号、图形、管理含义同源显示。</h2><div>{trigramStates.map(meta=><article key={meta.name}><Trigram name={meta.name}/><b>{meta.name}</b><small>{meta.symbol} · {meta.meaning} · S₈-{meta.id}</small></article>)}</div></div>}
-function HexagramAudit(){return <div className="hexagram-audit"><p className="eyebrow">六十四卦状态表 V0.1 · M₆₄</p><h2>由统一八卦表生成，上卦为参照，下卦为承接。</h2><p>这一版先建立 8 × 8 的可计算状态矩阵。后续六问诊断会把六个爻位写入这里，复诊则比较前后两个 M₆₄ 状态。</p><div className="hex-grid"><span className="corner">上 / 下</span>{trigramStates.map(upper=><b key={`h-${upper.name}`}>{upper.name}</b>)}{trigramStates.map(lower=><Fragment key={`row-${lower.name}`}><b>{lower.name}</b>{trigramStates.map(upper=>{const item=hexagramStates.find(x=>x.upper.name===upper.name&&x.lower.name===lower.name)!;return <article key={item.id}><small>M₆₄-{String(item.id).padStart(2,"0")}</small><strong>{item.name}</strong><em>{upper.name}上{lower.name}下</em></article>})}</Fragment>)}</div></div>}
-function StateExplain({answers,hex,currentHex}:{answers:(AnswerValue|undefined)[];hex:{name:string;code:string};currentHex:{name:string;code:string;upper:{name:string};lower:{name:string}}}){const tau=answers.find(a=>a?.tau!==undefined)?.tau??0,phase=answers.find(a=>a?.phase!==undefined)?.phase??0,delta=answers.find(a=>a?.delta!==undefined)?.delta??0;const items=[["三问基础态",hex.name],["六问现状卦",currentHex.name],["上下结构",`${currentHex.upper.name}上${currentHex.lower.name}下`]];return <div className="state-explain"><small>报告结构统一为 M₆₄ V0.1</small><p>本报告以六问生成的 M₆₄ 六爻卦作为唯一主诊断。S₈ 三爻卦只保留为底层基础态，用来解释“为什么会偏向这个方向”，不再和主卦并列争夺结论。</p><div>{items.map(([k,v])=><span key={k}><b>{k}</b><em>{v}</em></span>)}</div><i>读取顺序：先看 M₆₄ 主卦 → 再看六爻卡点 → 最后把 S₈ 当作底层倾向参考。</i></div>}
-const lineNames:{[key:number]:{name:string;focus:string}}={1:{name:"初爻 · 基层活力",focus:"真正做事的人是否还愿意动"},2:{name:"二爻 · 资源韧性",focus:"人、时间、能力和预算是否撑得住"},3:{name:"三爻 · 运营效率",focus:"目标是否变成清楚交付"},4:{name:"四爻 · 管理铰链",focus:"接口、责任和反馈是否接得住"},5:{name:"五爻 · 战略决策",focus:"目标、优先级和资源是否落位"},6:{name:"上爻 · 外部环境",focus:"外部变化是否改写原判断"}};
-function SixLineExplain({evidence}:{evidence:{question:{axis:string};option?:{text:string;evidence:string;value:AnswerValue}}[]}){const rows=evidence.map(({option},i)=>{const line=option?.value.line||((i+1) as 1|2|3|4|5|6),weight=option?.value.weight||0,weak=option?.value.lineValue==="yin"||weight>=3;return{line,meta:lineNames[line],weight,weak,text:option?.text||"尚未回答",evidence:option?.evidence||"系统暂按默认状态推导。",tone:weak?"偏弱/需关注":"偏强/可承接"}}).sort((a,b)=>a.line-b.line);const weakRows=rows.filter(r=>r.weak),strongRows=rows.filter(r=>!r.weak);const core=(weakRows.sort((a,b)=>b.weight-a.weight)[0]||rows.sort((a,b)=>b.weight-a.weight)[0]);return <div className="sixline-explain"><small>六问结果解释增强 V0.1</small><h2>真正的卡点：{core?.meta.name}</h2><p>{core?`这次最值得先看的不是卦名本身，而是「${core.meta.focus}」。你的选择显示这里的信号最重，后续行动最好先围绕这一层取证。`:"完成六问后，系统会在这里解释主要卡点。"}</p><div className="sixline-summary"><span><b>偏弱层</b>{weakRows.length?weakRows.map(r=>r.meta.name.split(" · ")[1]).join("、"):"暂无明显偏弱层"}</span><span><b>可承接层</b>{strongRows.length?strongRows.map(r=>r.meta.name.split(" · ")[1]).join("、"):"仍需继续观察"}</span><span><b>解释口径</b>先看权重，再看阴阳，再回到具体选项证据</span></div><ol>{rows.map(r=><li className={r.weak?"weak":"strong"} key={r.line}><span>第{r.line}爻</span><div><b>{r.meta.name}</b><em>{r.tone} · 权重 {r.weight}</em><p>{r.text}</p><small>{r.evidence}</small></div></li>)}</ol></div>}
-function WeightExplain({answers,score,taskImpact}:{answers:(AnswerValue|undefined)[];score:number;taskImpact?:{delta:number;notes:string[]}}){const total=answers.reduce((sum,a)=>sum+(a?.weight||0),0),delta=taskImpact?.delta||0,adjusted=Math.max(0,total+delta),level=adjusted>=8?"强":adjusted>=5?"中":"轻";return <div className="weight-explain"><small>选项权重 V0.1</small><p>同一大类里的不同选项现在会产生不同强度。复诊时，任务状态会作为加权提示参与解释，但不会替用户回答六问。</p><div className="weight-visual"><span><b>六问权重</b><i><em style={{width:`${Math.min(100,total/10*100)}%`}}/></i><strong>{total||0}</strong></span><span><b>任务修正</b><i><em style={{width:`${Math.min(100,Math.abs(delta)/6*100)}%`}}/></i><strong>{delta>0?`+${delta}`:delta}</strong></span><span><b>合成强度</b><i><em style={{width:`${Math.min(100,adjusted/12*100)}%`}}/></i><strong>{adjusted} · {level}</strong></span></div><span>当前路径行动代价：{score}/5</span>{taskImpact?.notes.map(x=><span key={x}>{x}</span>)}</div>}
-function getComplaintLens(topic:string){return lenses.find(l=>l.keys.some(k=>topic.includes(k)))||{id:"general",name:"组织困惑",hint:"先把这件事放进组织关系里看。"}}
-function pickTag(topic:string,pairs:[string,string[]][],fallback:string){return pairs.find(([,keys])=>keys.some(k=>topic.includes(k)))?.[0]||fallback}
-function buildComplaintProfile(topic:string,focusId?:string){
- const lens=getComplaintLens(topic);
- const focus=focusOptions.find(item=>item.id===focusId);
- return {
-  lens,
-  object:pickTag(topic,[["高层/决策层",["高层","老板","领导","决策","拍板"]],["一线/基层",["一线","基层","员工","现场"]],["跨部门协作",["部门","跨部门","协作","配合"]],["团队整体",["团队","组织","大家","成员"]]],"相关人群"),
-  action:focus?.profile.action||pickTag(topic,[["推进受阻",["推不动","推进","落地","执行","进度"]],["责任悬置",["负责","责任","没人","归口"]],["信息失真",["反馈","信息","沟通","说不清"]],["资源错配",["资源","人手","预算","时间","忙"]],["规则压制",["流程","审批","规则","制度"]]],"问题动作"),
-  relation:focus?.profile.relation||pickTag(topic,[["上下传导",["高层","基层","一线","反馈","下达"]],["横向协作",["部门","协作","配合","对齐","扯皮"]],["目标-执行",["目标","执行","落地","交付"]],["规则-创新",["规则","流程","创新","试错"]]],"组织关系"),
-  risk:focus?.profile.risk||pickTag(topic,[["停滞",["推不动","停","拖","慢"]],["内耗",["内耗","冲突","扯皮","争"]],["失焦",["模糊","混乱","散","不清楚"]],["失真",["反馈","信息","过滤","感知"]],["僵化",["规则","流程","审批"]]],"待观察风险"),
-  focus:focus?.label||"未补充"
- };
-}
-function tailorQuestions(topic:string){
- const lens=getComplaintLens(topic),short=topic.length>22?topic.slice(0,22)+"…":topic;
- return sixDiagnosisQuestions.map((q,index)=>{
-  if(index===0)return {...q,title:`“${short}”到了执行现场，最像哪一种情况？`,note:`${lens.hint} 第一问不问理论，只看目标有没有变成清楚的任务、节奏和交付责任。`,options:[
-   {...q.options[0],text:`大家知道“${short}”要做什么，也知道先交付哪一步`},
-   {...q.options[1],text:`方向大致明白，但“${short}”的任务拆分和交付节奏还不够清楚`},
-   {...q.options[2],text:`会议上都同意“${short}”，真正推进时就开始等待、拖延或反复解释`},
-   {...q.options[3],text:`“${short}”在现场已经明显推不动，继续压任务只会带来应付和内耗`}
-  ]};
-  if(index===1)return {...q,title:`为了推进“${short}”，资源和承压现在到什么程度？`,note:`第二问看资源：不是问资源多不多，而是看人、时间、能力和预算能不能承接这个目标。`,options:[
-   {...q.options[0],text:`人手、时间和能力基本够，只要排清优先级就能动`},
-   {...q.options[1],text:`资源有点紧，但停掉一两件低优先级的事还能撑住`},
-   {...q.options[2],text:`关键人、时间或能力明显缺口，推进时总有人被挤爆`},
-   {...q.options[3],text:`现在主要靠硬扛和加班在撑，继续做会伤到关键人或基本盘`}
-  ]};
-  if(index===2)return {...q,title:`真正做“${short}”的人，现在是什么状态？`,note:`第三问看一线：他们是在主动试着解决，还是只是在反馈困难、等待指令，甚至开始自保。`,options:[
-   {...q.options[0],text:`他们愿意试，也愿意承担一小步结果，只需要明确入口`},
-   {...q.options[1],text:`他们想配合，但不知道怎样做才算真正帮上忙`},
-   {...q.options[2],text:`他们反馈很多困难，像是在提醒风险或请求支援`},
-   {...q.options[3],text:`他们已经少说、少动、少担责，开始用沉默或绕开来自保`}
-  ]};
-  if(index===3)return {...q,title:`推进“${short}”时，管理接口现在顺不顺？`,note:`第四问看接口：谁决策、谁协调、谁接下一棒、问题怎么上来，这几件事是否接得住。`,options:[
-   {...q.options[0],text:`关键接口有人接，问题出现后也能及时拉齐`},
-   {...q.options[1],text:`接口有摩擦，但找到责任人后还能坐下来调整`},
-   {...q.options[2],text:`经常卡在交接处：上游说交了，下游说没法接`},
-   {...q.options[3],text:`关键接口已经变成内耗点，大家都想让别人先接锅`}
-  ]};
-  if(index===4)return {...q,title:`围绕“${short}”，关键决策现在清楚吗？`,note:`第五问看决策：不是问领导有没有想法，而是看目标、优先级、资源和拍板权是否真的落地。`,options:[
-   {...q.options[0],text:`目标、优先级和拍板人都清楚，资源也能跟着目标走`},
-   {...q.options[1],text:`大方向清楚，但哪些事该停、哪些事该保还没说透`},
-   {...q.options[2],text:`每件事都说重要，资源被分散，团队不知道该先保哪一个`},
-   {...q.options[3],text:`大家都在等最后拍板，关键资源迟迟不敢投、不敢停、不敢换`}
-  ]};
-  return {...q,title:`“${short}”面对的外部变化，现在压力有多大？`,note:`第六问看外部：客户、市场、政策、竞争、上级要求，是否已经改变原来的判断前提。`,options:[
-   {...q.options[0],text:`外部要求和变化基本清楚，按原计划推进问题不大`},
-   {...q.options[1],text:`外部有扰动，但还看得懂，暂时只需要调整节奏`},
-   {...q.options[2],text:`外部变化已经打乱原来的假设，内部需要重新对齐判断`},
-   {...q.options[3],text:`外部已经明显变局，继续按原计划走可能会把风险放大`}
-  ]};
- });
-}
+      {screen === "diagnose" && (
+        <DiagnosisPage
+          step={step}
+          setStep={setStep}
+          revisit={revisit}
+          complaint={complaint}
+          setComplaint={setComplaint}
+          lens={lens}
+          profile={profile}
+          activeQuestions={activeQuestions}
+          focusOptions={focusOptions}
+          submitComplaint={submitComplaint}
+          chooseFocus={chooseFocus}
+          answer={answer}
+        />
+      )}
 
-export default function Home(){
- const[screen,setScreen]=useState<Screen>("home"),[step,setStep]=useState(-1),[complaint,setComplaint]=useState(""),[focus,setFocus]=useState(""),[answers,setAnswers]=useState<(AnswerValue|undefined)[]>([]),[path,setPath]=useState(0),[mode,setMode]=useState(1),[records,setRecords]=useState<RecordItem[]>([]),[saved,setSaved]=useState(false),[revisit,setRevisit]=useState<RecordItem|null>(null),[feedback,setFeedback]=useState(""),[taskStates,setTaskStates]=useState<Record<string,TaskState>>({});
- useEffect(()=>{try{setRecords(JSON.parse(localStorage.getItem("linxia-fskn-records")||"[]"));setTaskStates(JSON.parse(localStorage.getItem("linxia-fskn-task-states")||"{}"))}catch{}},[]);
- const hex=useMemo(()=>resolveDiagnosis(answers),[answers]);
- const currentHex=useMemo(()=>resolveHexagramDiagnosis(answers),[answers]);
- const psychHex=useMemo(()=>derivePsychologicalHexagram(currentHex,answers),[currentHex,answers]);
- const structHex=useMemo(()=>deriveStructuralHexagram(currentHex,answers),[currentHex,answers]);
- const inertia=getState(hex.inertiaId);
- const targetHex=useMemo(()=>deriveTargetHexagram(currentHex,answers),[currentHex,answers]);
- const targetPaths=useMemo(()=>buildM64StrategyPaths(currentHex,targetHex.to),[currentHex,targetHex]);
- const chosen=targetPaths[path]||targetPaths[0];
- const riskLevel=useMemo(()=>getRiskLevel(answers),[answers]);
- const actionPlan=useMemo(()=>buildActionPlan(hex,chosen,riskLevel),[hex,chosen,riskLevel]);
- const nextReview=useMemo(()=>chosen.actions?.[0]?.checkpoint||"7 天后复诊：看第一动作是否让局面出现可验证变化。",[chosen]);
- const topic=complaint.trim()||"这件说不清的组织困惑";
- const lens=getComplaintLens(topic);
- const profile=buildComplaintProfile(topic,focus);
- const activeQuestions=useMemo(()=>tailorQuestions(topic),[topic]);
- const evidence=activeQuestions.map((question,index)=>{
-  const selected=answers[index];
-  const option=question.options.find(item=>{
-   if(!selected)return false;
-  if(item.value.line!==undefined)return selected.line===item.value.line&&selected.lineValue===item.value.lineValue&&selected.weight===item.value.weight;
-  if(item.value.tau!==undefined)return selected.tau===item.value.tau;
-  if(item.value.phase!==undefined)return selected.phase===item.value.phase;
-  return selected.delta===item.value.delta;
-  });
-  return {question,option};
- });
- const nav=(s:Screen)=>{setScreen(s);scrollTo(0,0)};
- function start(){setStep(-1);setFocus("");setAnswers([]);setPath(0);setSaved(false);setRevisit(null);setFeedback("");nav("diagnose")}
- function submitComplaint(){setComplaint(topic);setStep(-2)}
- function startRevisit(r:RecordItem){const taskBrief=revisitTasks.map((task,i)=>`${i+1}. ${task.title}｜状态：${taskStates[task.title]||"未完成"}｜依据：${task.why}`).join("\n");setRevisit(r);setComplaint(`复诊：${r.topic||r.target}\n\n上次行动：${r.action||r.summary||"尚未记录"}\n上次反馈：${r.feedback||"尚未填写"}\n\n复诊任务状态：\n${taskBrief||"暂无任务状态"}\n\n这 7/14 天的新变化：`);setFocus("");setAnswers([]);setPath(0);setSaved(false);setFeedback("");setStep(-1);nav("diagnose")}
- function chooseFocus(id:string){setFocus(id);setStep(0)}
- function answer(value:AnswerValue){let next=[...answers];next[step]=value;setAnswers(next);if(step<activeQuestions.length-1)setStep(step+1);else nav("map")}
- function updateTaskState(title:string,state:TaskState){const next={...taskStates,[title]:state};setTaskStates(next);localStorage.setItem("linxia-fskn-task-states",JSON.stringify(next))}
- function save(){if(saved)return;const oldHex=(revisit?.hex||revisit?.state||"").split(" · ")[0];const oldState=hexagramStates.find(item=>item.name===oldHex);const diffs=oldState?currentHex.lines.map((line,index)=>({line:index+1,from:oldState.lines[index],to:line,action:lineActionMap[(index+1) as 1|2|3|4|5|6]})).filter(item=>item.from!==item.to):[];const weaker=diffs.filter(item=>item.to==="yin").length,stronger=diffs.filter(item=>item.to==="yang").length;const recalc=riskLevel.key==="high"||weaker>=2?"目标重构":weaker===1?"重点校正":stronger>0?"顺势微调":(revisit?.pathName||chosen.name);const pivot=diffs[0]?.action;const rewritten=recalc==="目标重构"?["今天：暂停一个会继续放大风险的旧动作","7 天内：重新确认目标、授权和资源取舍","14 天内：只保留一条可验证的新路径"]:recalc==="重点校正"?[`今天：围绕「${pivot?.name||"关键卡点"}」补一次事实取证`,"7 天内：联动一个相邻管理层面，明确责任接口","14 天内：复盘新证据，决定是否继续换路"]:recalc==="顺势微调"?["今天：保留已经有效的小动作，不急着扩大","7 天内：补一条验证证据","14 天内：若信号稳定，再扩大到第二个接口"]:actionPlan.moves;const conclusionDiff=revisit?`${oldHex||"上次状态"} → ${currentHex.name}；风险：${(revisit.risk?.match(/风险强度：([^。]+)/)?.[1]||"未记录")} → ${riskLevel.label}；路径：${revisit.pathName||"未记录"} → ${recalc}；任务修正：${taskImpact.delta>0?`+${taskImpact.delta}`:taskImpact.delta}`:undefined;const riskText=`心理卦：${psychHex.to.name}；事理卦：${structHex.to.name}；风险强度：${riskLevel.label}。`;const archivedTrend=revisit&&conclusionDiff?makeTrendVerdict([{date:new Date().toLocaleDateString("zh-CN"),hex:currentHex.name+" · "+currentHex.situationTitle,target:chosen.target.name+" · "+chosen.name+" · "+topic,mode:modes[mode].name,progress:feedback.trim()?66:33,risk:riskText,pathName:chosen.name,feedback:feedback.trim(),conclusionDiff},...(records.filter(r=>r.conclusionDiff).slice(0,1))]):undefined;const item={date:new Date().toLocaleDateString("zh-CN"),hex:currentHex.name+" · "+currentHex.situationTitle,target:chosen.target.name+" · "+chosen.name+" · "+topic,mode:modes[mode].name,progress:feedback.trim()?66:33,topic,state:`当前主诊断：${currentHex.name} · ${currentHex.situationTitle}。${currentHex.managementReading}`,risk:riskText,pathName:chosen.name,summary:`建议先走「${chosen.name}」：${chosen.recommendation}`,action:`${actionPlan.type}：${actionPlan.first}`,feedback:feedback.trim(),nextReview,closedLoop:feedback.trim()?`已记录反馈，下一次复诊重点：${nextReview}`:`尚未记录行动反馈，下一次可补写执行证据。`,lineDiffs:diffs.map(item=>`第${item.line}爻 · ${item.action.name}：${item.from==="yin"?"偏弱":"可承接"}→${item.to==="yin"?"偏弱":"可承接"}`),recalcPath:revisit?`${revisit.pathName||"未记录"} → ${recalc}`:undefined,rewrittenActions:revisit?rewritten:undefined,conclusionDiff,trendVerdict:archivedTrend?`${archivedTrend.title}｜${archivedTrend.body}｜${archivedTrend.focus}`:undefined,trendBasis:archivedTrend?.basis.join("｜")};let next=[item,...records].slice(0,12);setRecords(next);setSaved(true);localStorage.setItem("linxia-fskn-records",JSON.stringify(next))}
- const timeline=[...records].reverse(),latest=records[0],first=timeline[0],changedCount=records.filter(r=>r.lineDiffs?.length||r.recalcPath).length,feedbackCount=records.filter(r=>r.feedback).length;
- const trajectoryInsight=(()=>{
-  if(!records.length)return null;
-  const feedbackRate=feedbackCount/records.length,last=records[0],lastChange=last?.lineDiffs?.length||0,pathShift=records.filter(r=>r.recalcPath).length;
-  if(records.length===1)return {tone:"起步建档",title:"已经形成第一张组织处境底片。",body:"当前还不能判断趋势，先用一次行动反馈来验证这张现状卦是否抓住了主要矛盾。",evidence:["已有 1 次诊断记录","尚未形成连续复诊样本",`当前路径：${last?.pathName||last?.mode}`],next:"建议完成一次行动后，从当前节点发起复诊。"};
-  if(feedbackRate<.5)return {tone:"执行停滞",title:"记录在增加，但反馈闭环偏少。",body:"系统能看到诊断和路径，但还缺少足够行动结果。此时不宜继续扩大方案，先补足事实反馈。",evidence:[`反馈闭环 ${feedbackCount}/${records.length}`,`路径/爻位变化 ${changedCount} 次`,`当前卦：${last?.hex?.split(" · ")[0]||"未记录"}`],next:"下一步先补写一次真实执行结果，再判断是否换路。"};
-  if(pathShift>=2)return {tone:"目标漂移",title:"路径多次重算，说明目标或约束正在移动。",body:"这不一定是坏事，但意味着原先的问题定义可能正在变化。需要先确认目标边界，再继续推进动作。",evidence:[`路径重算 ${pathShift} 次`,`反馈闭环 ${feedbackCount}/${records.length}`,`最新路径：${last?.pathName||last?.mode}`],next:"下一次复诊重点放在目标、授权和资源取舍是否一致。"};
-  if(lastChange>=3)return {tone:"剧烈震荡",title:"最新复诊出现多处爻位变化。",body:"组织处境正在快速变动，短期内不适合一次性下重手。更稳的做法是缩小动作，先抓一个关键接口验证。",evidence:[`最新变化 ${lastChange} 个爻位`,`路径/爻位变化 ${changedCount} 次`,`当前卦：${last?.hex?.split(" · ")[0]||"未记录"}`],next:"下一步只保留一个最小动作，3 到 7 天内复查。"};
-  return {tone:"稳步改善",title:"轨迹开始形成可跟踪的修正节奏。",body:"诊断、反馈和路径调整之间已经连起来。可以继续用小步复诊保持方向感，而不是追求一次判断到位。",evidence:[`反馈闭环 ${feedbackCount}/${records.length}`,`路径/爻位变化 ${changedCount} 次`,`当前路径：${last?.pathName||last?.mode}`],next:"下一次复诊重点看当前路径是否产生可验证的小成果。"};
- })();
- const trajectoryWarnings=(()=>{
-  if(!records.length)return [];
-  const last=records[0],lastChange=last?.lineDiffs?.length||0,pathShift=records.filter(r=>r.recalcPath).length,feedbackRate=feedbackCount/records.length;
-  return [
-   feedbackRate<.5&&{level:"高",title:"反馈不足",reason:`只有 ${feedbackCount}/${records.length} 次记录带有行动反馈。`,risk:"继续诊断会越来越像讨论观点，而不是检验行动结果。",action:"先补一次真实执行反馈，再决定是否继续重算路径。"},
-   pathShift>=2&&{level:"中",title:"路径频繁重算",reason:`已有 ${pathShift} 次路径重算。`,risk:"目标、授权或资源条件可能在移动，容易一边行动一边改题。",action:"下一次复诊先确认目标边界，再进入行动改写。"},
-   lastChange>=3&&{level:"中",title:"最新变化过大",reason:`最新节点出现 ${lastChange} 个爻位变化。`,risk:"局面波动较大，此时动作过多会放大组织噪声。",action:"收敛到一个关键接口，3 到 7 天后短复诊。"},
-   records.length>=3&&changedCount===0&&{level:"低",title:"轨迹过于平直",reason:"多次记录中未出现路径或爻位变化。",risk:"可能是局面真的稳定，也可能是提问和反馈没有捕捉到真实变化。",action:"下次复诊补写一个反例：哪件事和预期不一样？"}
-  ].filter(Boolean).slice(0,3) as {level:string,title:string,reason:string,risk:string,action:string}[];
- })();
- const revisitTasks=(trajectoryWarnings.length?trajectoryWarnings.map((w,i)=>({title:w.action,why:w.title+"："+w.reason,when:i===0?"复诊前先完成":"下次复诊时核对"})):[
-  {title:"补写一次真实行动结果",why:"让系统区分“判断变化”和“行动变化”。",when:"下一次复诊前"},
-  {title:"确认当前路径是否仍然有效",why:`当前路径为「${latest?.pathName||latest?.mode||"未记录"}」，需要用事实校验。`,when:"复诊开始时"},
-  {title:"准备一个反例或新证据",why:"避免轨迹只沿着上次结论惯性延伸。",when:"六问前"}
- ]).slice(0,3);
- const taskImpact=revisitTasks.reduce((acc,task)=>{const state=taskStates[task.title]||"未完成";if(state==="已完成"){acc.delta-=1;acc.notes.push(`已完成：${task.title}，原阻滞权重 -1`)}else if(state==="有变化"){acc.delta+=2;acc.notes.push(`有变化：${task.title}，变化敏感度 +2`)}else{acc.delta+=1;acc.notes.push(`未完成：${task.title}，执行阻滞权重 +1`)}return acc},{delta:0,notes:[] as string[]});
- const diffPair=records.filter(r=>r.conclusionDiff).slice(0,2),diffTrend=diffPair.length<2?"等待下一次复诊形成对比":diffPair[0].pathName!==diffPair[1].pathName?"路径转向":diffPair[0].risk!==diffPair[1].risk?"风险变化":"连续观察";
- const trendVerdict=makeTrendVerdict(diffPair);
- return <main>
-  <header className="top"><button className="brand" onClick={()=>nav("home")}><BrandMark className="brand-symbol"/><span><b>知道 · 管理</b><small>林下问路｜网罟天下，以佃以渔</small></span></button><nav><button onClick={start}>处境诊断</button><button onClick={()=>nav("system")}>方法体系</button><button onClick={()=>nav("history")}>演化记录 <i>{records.length}</i></button></nav></header>
-  {screen!=="home"&&<><div className="subnav"><button onClick={()=>nav("home")}>← 林下入口</button><ol>{["知境","见势","择路","迭代"].map((x,i)=><li className={(screen==="diagnose"&&i<=0)||(screen==="map"&&i<=2)||(screen==="history")?"on":""} key={x}><span>0{i+1}</span>{x}</li>)}</ol><b>FSKN / V6.0</b></div><div className="ui-legend"><span><b>深色/箭头</b>可点击动作</span><span><b>浅色标签</b>诊断信息</span><span><b>边框卡片</b>解释内容</span></div></>}
+      {screen === "map" && (
+        <ReportPage
+          currentHex={currentHex}
+          psychHex={psychHex}
+          structHex={structHex}
+          targetHex={targetHex}
+          hex={hex}
+          chosen={chosen}
+          targetPaths={targetPaths}
+          riskLevel={riskLevel}
+          taskImpact={taskImpact}
+          answers={answers}
+          evidence={evidence}
+          topic={topic}
+          profile={profile}
+          revisit={revisit}
+          actionPlan={actionPlan}
+          path={path}
+          setPath={setPath}
+          feedback={feedback}
+          setFeedback={setFeedback}
+          nextReview={nextReview}
+          mode={mode}
+          setMode={setMode}
+          modes={modes}
+          save={save}
+          saved={saved}
+        />
+      )}
 
-  {screen==="home"&&<><section className="hero"><div className="hero-left"><div className="hero-brand"><BrandMark className="hero-symbol"/><div><b>林下问路</b><small>ZHIDAO MANAGEMENT</small></div></div><p className="eyebrow">林下问路 · 组织处境诊断与动态推演</p><h1>知境，<br/><em>而后知道。</em></h1><p className="lead">以关系结构为镜，以管理实践为用。<br/>看见现在在哪里，不改变会去哪里，以及下一爻可以怎样动。</p><div className="actions"><button className="primary" onClick={start}>开始六问诊断 <span>↗</span></button><button className="link" onClick={()=>nav("system")}>先了解方法体系</button></div><div className="promise"><span>01 六问成卦</span><span>02 动态变卦</span><span>03 三路寻优</span></div></div><DynamicChange/></section>
-  <section className="triple"><div className="section-title"><p className="eyebrow">六问路径沙盘</p><h2>不是一条静态路线，<br/>而是持续修正的航向。</h2></div>{[["现状之卦","六问成卦","把六个管理判断写入六爻，生成 M₆₄ 主诊断"],["心理/事理","双重惯性","从六爻现状卦推演主观趋避与客观滑向"],["目标路径","差异爻寻优","生成目标卦，并比较先动哪几爻"]].map((v,i)=><article key={v[0]}><span>0{i+1}</span><h3>{v[0]}</h3><b>{v[1]}</b><p>{v[2]}</p><i/></article>)}</section>
-  <section className="engine"><aside><p className="eyebrow">四层策略引擎</p><h2>古典意象在表，<br/>离散结构在里。</h2><p>从五行的关系空间，到八卦的瞬时处境、六十四卦的情境议题，再到易林的演化建议。用户不必理解数学，也能获得可解释的判断。</p><button className="light" onClick={()=>nav("system")}>查看完整映射 →</button></aside><div>{[["0","五行","管理的基本关系"],["1","八卦","八种基础处境"],["2","六十四卦","六十四种情境议题"],["3","易林","变化中的操作线索"]].map(v=><article key={v[0]}><small>LEVEL {v[0]}</small><b>{v[1]}</b><p>{v[2]}</p></article>)}</div></section></>}
+      {screen === "system" && <SystemPage start={start} />}
 
-  {screen==="diagnose"&&<section className="diagnose"><aside><p className="eyebrow">{step===-1?"第零问 · 主诉":step===-2?"补一问 · 校准":"六问成卦"}</p><h1>{revisit?<><span>带着上次判断，</span><br/><span>再问一次路。</span></>:<><span>先把困惑放下，</span><br/><span>再一起问路。</span></>}</h1><p>{revisit?"复诊不是推翻上次判断，而是把新变化写入系统：哪里变清楚了，哪里仍在滑向惯性，下一步是否需要换路。":step===-1?"不必完整描述背景。只要写下此刻最卡住、最反复、最说不清的一件事。":step===-2?"先补一个最小判断：这不是正式诊断，只是帮系统把主诉画像校准一点。":`系统已识别为「${lens.name}」语境，六问会围绕你的主诉展开，并写入六个爻位生成 M₆₄ 现状卦。`}</p>{step>=-2&&step!==-1&&<div className="profile-mini"><small>主诉画像标签</small><span><b>对象</b>{profile.object}</span><span><b>动作</b>{profile.action}</span><span><b>关系</b>{profile.relation}</span><span><b>风险</b>{profile.risk}</span></div>}{revisit&&<div className="revisit-card"><small>复诊来源</small><b>{revisit.topic||"早期诊断记录"}</b><p>{revisit.summary||revisit.target}</p><em>{revisit.action||revisit.risk}</em></div>}<div className="progress"><span style={{width:`${step===-1?10:step===-2?20:(step+1)/activeQuestions.length*100}%`}}/></div><small>{step===-1?"0 / 6":step===-2?"校准 / 6":`${step+1} / ${activeQuestions.length}`}</small></aside>{step===-1?<div className="question complaint"><p className="eyebrow">主诉 · 围绕真实问题诊断</p><h2>{revisit?"这次复诊，发生了哪些新变化？":"此刻最困扰你的组织问题是什么？"}</h2><textarea value={complaint} onChange={e=>setComplaint(e.target.value)} placeholder={revisit?"例如：上次建议先止住跨部门扯皮；这两周我暂停了一个会议，但资源争夺还在，团队对责任边界更清楚了一点。":"例如：目标很清楚，但团队总是推不动；几个部门都很忙，却没人愿意真正负责；我感觉组织哪里不对，但说不清。"} autoFocus/><div className="complaint-tips"><span>{revisit?"写变化即可":"一句话即可"}</span><span>{revisit?"可写行动结果":"可以很模糊"}</span><span>{revisit?"系统会重新六问":"后面六问会帮你定位"}</span></div><button className="primary" onClick={submitComplaint}>{revisit?"带着变化进入复诊六问":"先补一问，再进入六问"} <span>↗</span></button></div>:step===-2?<div className="question followup"><p className="eyebrow">主诉画像 · 快速校准</p><h2>这件事最先卡住的是哪里？</h2><p>选择一个最接近的入口即可。选错也没关系，后面的六问会继续修正判断。</p><div className="options">{focusOptions.map((x,i)=><button onClick={()=>chooseFocus(x.id)} key={x.id}><span>{String.fromCharCode(65+i)}</span><b>{x.label}</b><small>{x.desc}</small><i>校准画像 →</i></button>)}</div><button className="back" onClick={()=>setStep(-1)}>← 修改主诉</button></div>:<div className="question"><p className="eyebrow">{activeQuestions[step].label} · {lens.name}</p><h2>{activeQuestions[step].title}</h2><p>{activeQuestions[step].note}</p><small className="axis">{activeQuestions[step].axis}</small><div className="options">{activeQuestions[step].options.map((x,i)=><button onClick={()=>answer(x.value)} key={x.text}><span>{String.fromCharCode(65+i)}</span><b>{x.text}</b><small>{x.evidence}</small><i>写入第 {x.value.line||step+1} 爻 →</i></button>)}</div>{step>0&&<button className="back" onClick={()=>setStep(step-1)}>← 返回上一问</button>}{step===0&&<button className="back" onClick={()=>setStep(-2)}>← 返回补一问</button>}</div>}</section>}
-
-  {screen==="map"&&<section className="map-page"><div className="report-head"><p className="eyebrow">主诉诊断报告 · V1.0</p><span>MAIN / M₆₄-{currentHex.id} · PSY / M₆₄-{psychHex.to.id} · STR / M₆₄-{structHex.to.id} · TARGET / M₆₄-{targetHex.to.id}</span><h1>{currentHex.name}：这是本次六问生成的主诊断卦。</h1><blockquote>{topic}</blockquote><div className="profile-card"><small>主诉画像 V0.3 · 诊断标签</small><p>这些不是按钮，而是系统对你主诉的初步理解：它们说明系统会从哪个管理角度继续提问。</p><span><b>问题类型</b>{profile.lens.name}</span><span><b>最先卡点</b>{profile.focus}</span><span><b>相关对象</b>{profile.object}</span><span><b>问题动作</b>{profile.action}</span><span><b>组织关系</b>{profile.relation}</span><span><b>风险倾向</b>{profile.risk}</span></div>{revisit&&<RevisitCompare record={revisit} currentHex={currentHex} risk={riskLevel} taskImpact={taskImpact}/>}<ReportSummary currentHex={currentHex} psychHex={psychHex} structHex={structHex} targetHex={targetHex} hex={hex} path={chosen}/><StateExplain answers={answers} hex={hex} currentHex={currentHex}/><SixLineExplain evidence={evidence}/><WeightExplain answers={answers} score={chosen.metrics.cost} taskImpact={revisit?taskImpact:undefined}/></div><div className="report-grid"><article className="report-main"><small>主诊断 · M₆₄ 六爻现状卦</small><div><HexagramMark name={currentHex.name} upper={currentHex.upper.name} lower={currentHex.lower.name} code={currentHex.code}/></div><h2>{currentHex.situationTitle}</h2><p>{currentHex.managementReading}</p><p>{currentHex.coreContradiction}</p></article><article className="report-proof"><small>判断依据</small><h2>六问写入六个爻位</h2><ul>{evidence.map(({question,option},i)=><li key={`${question.key}-${i}`}><span>0{i+1}</span><div><b>{question.axis}</b><p>{option?.text||"尚未回答"}</p><small>{option?`${option.evidence} 第 ${option.value.line||i+1} 爻 · 权重 +${option.value.weight||1}`:"系统按默认状态推导。"}</small></div></li>)}</ul></article><DerivedHexCard item={psychHex}/><DerivedHexCard item={structHex}/><DerivedHexCard item={targetHex}/><article className="report-recommend"><small>路径推荐 · M₆₄ V0.1</small><h2>{chosen.name} · 目标卦「{chosen.target.name}」</h2><p>{chosen.desc}</p><PathMetrics metrics={chosen.metrics}/><PathReason path={chosen} isDefault/><span className="weight-score">变化爻 {chosen.changedLines.map(line=>`第${line}爻`).join("、")}</span><em>{chosen.rationale} 当前路径由「{currentHex.name}」到「{chosen.target.name}」的差异爻生成。</em></article></div><div className="insight-panel"><article><small>基础态参考 · S₈</small><h2>{hex.name} · {hex.title}</h2><p>{hex.explanation}</p></article><article><small>容易误判</small><h2>不要把 S₈ 当作主卦</h2><p>{hex.misread} 本报告主结论以「{currentHex.name}」为准。</p></article><article className="avoid"><small>此刻勿做</small><h2>{hex.avoid}</h2><p>先停止会放大惯性的动作，再谈新增动作。</p></article><article className={`first-action action-${riskLevel.key}`}><small>第一行动 · {actionPlan.type}</small><h2>{actionPlan.headline}</h2><p>{actionPlan.first}</p><em>{actionPlan.note}</em></article></div><div className="map-head compact"><p className="eyebrow">三卦路径沙盘 · M₆₄</p><h1>从 {currentHex.name} 到 {targetHex.to.name}</h1><p>现状卦、心理卦、目标卦都来自同一个 M₆₄ 六爻状态；事理卦保留在上方报告卡片中，路径按现状与目标之间的差异爻生成。</p></div><div className="three-hex"><article className="current"><small>主现状卦 · M₆₄</small><div><HexagramMark name={currentHex.name} upper={currentHex.upper.name} lower={currentHex.lower.name} code={currentHex.code}/></div><h2>{currentHex.situationTitle}</h2><p>{currentHex.managementReading}</p></article><i>心理 →</i><article className="inertia"><small>心理卦 · M₆₄</small><div><HexagramMark name={psychHex.to.name} upper={psychHex.to.upper.name} lower={psychHex.to.lower.name} code={psychHex.to.code}/></div><h2>{psychHex.question}</h2><p>{psychHex.reading}</p></article><i>目标 →</i><article className="target"><small>目标卦 · M₆₄</small><div><HexagramMark name={targetHex.to.name} upper={targetHex.to.upper.name} lower={targetHex.to.lower.name} code={targetHex.to.code}/></div><h2>{targetHex.question}</h2><p>{targetHex.reading}</p></article></div>
-  <div className="path-pick"><div><p className="eyebrow">三条推荐路径 · M₆₄ P₄₀₉₆</p><h2>从现状卦到目标卦，先动哪几爻？</h2></div><section>{targetPaths.map((p,i)=><button className={i===path?"selected":""} onClick={()=>setPath(i)} key={p.tag}><span>{p.tag}</span><div><b>{p.name}</b><small>{p.cost}</small><p>{p.desc}</p><PathMetrics metrics={p.metrics}/><PathReason path={p} isDefault={i===0}/><span className="weight-score">变化爻 {p.changedLines.map(line=>`第${line}爻`).join("、")}</span><ActionMapping actions={p.actions}/><em>{p.rationale}</em></div><i>{i===path?"已选择":"比较此路"}</i></button>)}</section><PathFeedback path={chosen}/></div>
-  <div className="roadbook"><aside><p className="eyebrow">从 {currentHex.name} 到 {chosen.target.name}</p><h2>14 天第一段路书 · {actionPlan.type}</h2><p>针对“{topic}”，目标卦为「{chosen.target.name}」。{actionPlan.note}</p></aside><ol>{actionPlan.moves.map((x,i)=><li key={x}><span>0{i+1}</span><b>{x}</b><small>{["今天","7 天内","14 天内"][i]}</small></li>)}</ol><div className="gate"><small>收敛闸门</small><span><i/>主诉变清楚</span><span><i/>行动 ≤ 2 步</span><span><i/>风险信号转弱</span></div></div>
-  <ActionFeedback feedback={feedback} setFeedback={setFeedback} nextReview={nextReview}/>
-  <div className="mode"><div><p className="eyebrow">控制权在你</p><h2>下一次变化发生时，系统怎样陪你？</h2></div><div>{modes.map((m,i)=><button className={mode===i?"on":""} onClick={()=>setMode(i)} key={m.name}><b>{m.name}</b><small>{m.desc}</small></button>)}</div><button className="primary" onClick={save}>{saved?"本次路径已存档 ✓":"确认路径，进入第一次迭代"}</button></div></section>}
-
-  {screen==="system"&&<section className="system"><div className="system-hero"><p className="eyebrow">知道管理 · 方案总览</p><h1>以关系为体，<br/>以管理实践为用。</h1><p>这套方案把组织看作一个持续变化的关系网络。它的工作不是给复杂现实贴标签，而是把当下状态、默认趋势与可选目标放进同一个可计算、可讨论的框架。</p></div><div className="axioms">{[["八卦","八种基础处境","三种正交的二相管理行为形成八种基础态，用作底层解释，而不是最终报告主卦。"],["六十四卦","八种处境的上下复合","六问把六个管理判断写入初、二、三、四、五、上六个爻位，生成 M₆₄ 主诊断。"],["4096 种变卦","六十四卦之间的可达变化","任一现状卦都可能转向任一目标卦，形成 64 × 64 = 4096 条演化关系。"]].map(v=><article key={v[0]}><small>{v[0]}</small><h2>{v[1]}</h2><p>{v[2]}</p></article>)}</div><TrigramAudit/><HexagramAudit/><div className="math-kernel"><aside><p className="eyebrow">数学内核 · M-1.0</p><h2>从可观测六问，<br/>进入可计算演化。</h2><p>以 FSKN 数学体系为本体，把组织处境映射为离散状态空间、非交换演化和自适应控制问题。</p></aside><div>{[["状态空间","S₈","三种正交的二相管理行为，组成八种基础组织状态。"],["映射空间","M₆₄","六问写入六爻，形成六十四种主诊断情境。"],["演化空间","P₄₀₉₆","任一现状卦到任一目标卦皆为一条可比较的路径，支持代价、风险和中继点计算。"],["控制策略","π*","在惯性驱动力与干预控制力之间寻优，持续修正下一步动作。"]].map(v=><article key={v[0]}><small>{v[0]}</small><b>{v[1]}</b><p>{v[2]}</p></article>)}</div></div><div className="system-map"><aside><p className="eyebrow">产品闭环</p><h2>诊断不是终点，<br/>而是进入深度内容与持续问答的入口。</h2></aside><div>{[["诊断","我现在在哪","六问 → M₆₄ 主诊断"],["议题","为什么会这样","六十四种情境 · 七层阅读"],["问答","下一步怎么走","三锚点 · 200字行动指令"],["迭代","目标还对不对","内层修路 · 外层换靶"]].map((v,i)=><article key={v[0]}><span>0{i+1}</span><b>{v[0]}</b><h3>{v[1]}</h3><p>{v[2]}</p></article>)}</div></div><div className="principles"><p className="eyebrow">三重承诺</p><div><article><b>可解释</b><p>每一个判断都能回到六问、六爻与路径代价。</p></article><article><b>可选择</b><p>系统给出多条路线，目标与陪伴模式由用户决定。</p></article><article><b>可更新</b><p>变化后重新计算，旧答案不会永久定义组织。</p></article></div></div><button className="primary center" onClick={start}>从六问进入系统 <span>↗</span></button></section>}
-
-{screen==="history"&&<section className="history timeline-view"><div className="section-title"><p className="eyebrow">M₆₄ 演化轨迹 · 仅保存在此设备</p><h1>把每次复诊，<br/>连成一条路。</h1><p>时间线会把现状卦、路径重算、爻级变化和行动反馈串起来。它不是给组织贴永久标签，而是看清：哪里正在变，哪里还没动，下一次该复查什么。</p></div>{records.length?<><div className="timeline-summary"><article><small>起点</small><b>{first?.hex?.split(" · ")[0]||"未记录"}</b><span>{first?.pathName||first?.mode}</span></article><article><small>当前</small><b>{latest?.hex?.split(" · ")[0]||"未记录"}</b><span>{latest?.pathName||latest?.mode}</span></article><article><small>复诊变化</small><b>{changedCount}</b><span>次路径或爻位发生更新</span></article><article><small>反馈闭环</small><b>{feedbackCount}/{records.length}</b><span>次记录带有行动反馈</span></article></div>{diffPair.length>0&&<div className="diff-compare"><header><small>M₆₄ 复诊摘要对比视图 V0.1</small><b>{diffTrend}</b><p>把最近两次复诊摘要并排看：重点不是单次结论，而是判断为什么连续变化。</p></header><div>{diffPair.map((r,i)=><article key={`${r.date}-${i}`}><small>{i===0?"最新复诊":"上次复诊"} · {r.date}</small><b>{r.hex?.split(" · ")[0]||"未记录"}</b><p>{r.conclusionDiff}</p><em>{r.pathName||r.mode}</em></article>)}</div><section className="trend-verdict"><small>M₆₄ 趋势判词可解释依据 V0.1</small><b>{trendVerdict.title}</b><p>{trendVerdict.body}</p><ul>{trendVerdict.basis.map(x=><li key={x}>{x}</li>)}</ul><em>{trendVerdict.focus}</em></section></div>}{trajectoryInsight&&<div className="trajectory-insight"><aside><small>轨迹洞察 V0.1</small><b>{trajectoryInsight.tone}</b><p>{trajectoryInsight.title}</p></aside><section><p>{trajectoryInsight.body}</p><div>{trajectoryInsight.evidence.map(x=><span key={x}>{x}</span>)}</div><em>{trajectoryInsight.next}</em></section></div>}{trajectoryWarnings.length>0&&<div className="trajectory-warnings"><header><small>M₆₄ 轨迹预警 V0.1</small><b>请先收敛这几个信号</b><p>预警不是否定路径，而是提醒哪些地方暂时不要继续放大。</p></header><div>{trajectoryWarnings.map(w=><article key={w.title} className={`warn-${w.level}`}><span>{w.level}</span><div><b>{w.title}</b><p>{w.reason}</p><small>{w.risk}</small><em>{w.action}</em></div></article>)}</div></div>}{revisitTasks.length>0&&<div className="revisit-tasks"><header><small>M₆₄ 复诊任务清单 V0.1</small><b>下次复诊前，先做这三件事</b><p>把预警转成可执行的复诊准备，让系统下次重算时有事实依据。</p></header><ol>{revisitTasks.map((task,i)=>{const state=taskStates[task.title]||"未完成";return <li key={task.title} className={`task-${state}`}><span>{String(i+1).padStart(2,"0")}</span><div><b>{task.title}</b><p>{task.why}</p><em>{task.when}</em><div className="task-state"><small>当前状态：{state}</small>{(["未完成","已完成","有变化"] as TaskState[]).map(x=><button key={x} className={state===x?"on":""} onClick={()=>updateTaskState(task.title,x)}>{x}</button>)}</div></div></li>})}</ol></div>}<div className="evolution-timeline">{timeline.map((r,i)=><article key={`${r.date}-${i}`} className={i===timeline.length-1?"current":""}><div className="timeline-stem"><i/><span>{String(i+1).padStart(2,"0")}</span></div><div className="timeline-card"><header><time>{r.date}</time><em>{i===0?"起点":i===timeline.length-1?"当前":"复诊"}</em></header><div className="timeline-main"><div><small>主诊断</small><b>{r.hex}</b><p>{r.topic||"早期诊断记录"}</p></div><div><small>路径</small><b>{r.pathName||r.mode}</b><p>{r.recalcPath||r.summary||r.target}</p></div><div><small>反馈</small><b>{r.feedback?"已闭环":"待反馈"}</b><p>{r.feedback||r.closedLoop||"下一次记录行动结果后，时间线会继续更新。"}</p></div></div>{r.conclusionDiff&&<div className="timeline-conclusion"><b>复诊差异摘要</b><p>{r.conclusionDiff}</p></div>}{r.trendVerdict&&<div className="timeline-verdict"><b>入档趋势判词</b><p>{r.trendVerdict.split("｜")[0]}</p><span>{r.trendVerdict.split("｜")[1]}</span><em>{r.trendVerdict.split("｜")[2]}</em>{r.trendBasis&&<ul>{r.trendBasis.split("｜").map(x=><li key={x}>{x}</li>)}</ul>}</div>}{r.lineDiffs?.length&&<div className="timeline-diffs">{r.lineDiffs.slice(0,3).map(x=><span key={x}>{x}</span>)}{r.lineDiffs.length>3&&<span>另有 {r.lineDiffs.length-3} 个爻位变化</span>}</div>}{r.rewrittenActions?.length&&<ol className="timeline-actions">{r.rewrittenActions.slice(0,3).map(x=><li key={x}>{x}</li>)}</ol>}<button className="revisit-start" onClick={()=>startRevisit(r)}>从此节点复诊 →</button></div></article>)}</div></>:<div className="empty"><BrandMark className="empty-symbol"/><h2>尚未开始第一次演化</h2><p>完成六问并选择一条目标路径后，本次判断会留在这里。</p><button className="primary" onClick={start}>开始六问诊断</button></div>}</section>}
-  <footer><div><BrandMark className="footer-symbol"/><span><b>知道 · 管理</b><small>林下问路</small></span></div><p>网罟天下，以佃以渔</p><span>知境，而后知道。</span></footer>
- </main>
+      {screen === "history" && (
+        <HistoryPage
+          records={records}
+          setRecords={setRecords}
+          taskStates={taskStates}
+          setTaskStates={setTaskStates}
+          startRevisit={startRevisit}
+          start={start}
+          emptyMark={<BrandMark className="empty-symbol" />}
+        />
+      )}
+      <footer>
+        <div>
+          <BrandMark className="footer-symbol" />
+          <span>
+            <b>知道 · 管理</b>
+            <small>林下问路</small>
+          </span>
+        </div>
+        <p>网罟天下，以佃以渔</p>
+        <span>知境，而后知道。</span>
+      </footer>
+    </main>
+  );
 }
